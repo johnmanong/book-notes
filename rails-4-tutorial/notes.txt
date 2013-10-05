@@ -16,7 +16,119 @@ Chapter N | title ##############################################################
 
 Chapter N | title #############################################################################
 
-Chapter N | title #############################################################################
+Chapter 5 | Filling in the Layout #############################################################################
+
+- Topics:
+  - styling
+    - bootstrap
+    - sass
+  - partials
+  - asset pipeline
+  - routes
+  - revisit Rspec
+  - user sign up
+
+- References:
+  - Mockingbird (https://gomockingbird.com/)
+  - Google HTML5 Shim (http://html5shim.googlecode.com/svn/trunk/html5.js)
+  - Twitter bootstrap ()
+
+5.1 | Adding Some Structure
+  - "wireframes" : static mocks of page layout and design
+  - Mockingbird is an online wireframing tool
+  - creating new branch 'filling-in-layout'
+
+5.1.1 | Site Navigation
+  - IE conditional comments
+    - i.e. <!-- [if lt IE 9] ... <!endif-->
+  - html5 shim from Google of < IE 9
+  - new tags for html5, more specific divs -> 'header', 'nav', 'sections'
+  - adding bootstrap specific html classes for future styling
+  - as mentioned in ch3, the 'yeild' method inserts the contents from the page into the layout
+  - 'image_tag' : generates image tag, defaults 'alt' to filename (sans extension)
+
+5.1.2 | Bootstrap and Custom CSS
+  - Twitter bootstrap build using LESS CSS (similar to SASS)
+  - 'bootstrap-sass' gem translates bootstrap to Sass
+  - ** installed 'SCSS' and 'SASS' packages into sublime
+  - need to update 'config/application.rb' for asset pipeline to work with bootstrap
+    - (inside of applicaiton class) -> 'config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif)'
+  - add css stylings onto of bootstrap defaults
+
+5.1.3 | Partials
+  - refactor page structure into logical chunks, uncluttering layouts/views
+  - user the 'render' method to render partials
+  - by convention file names start with an '_'
+
+5.2 | Sass and the Asset Pipeline
+ - Asset Pipeline helps manage javascript, css, and image files
+ - Sass is available by default in the asset pipeline
+
+5.2.1 | The Asset Pipeline
+  - "asset directories" : default directories where js, css and image assets should go
+  - "manifest files" : 
+  - "preprocessor engine" : 
+
+  - Asset Directories
+    - the three conanical directories: 
+      - "app/assets" : assets specific to present applicaiton
+      - "lib/assets" : assets from libraries, written both dev team
+      - "vender/assets" : assets from third party vendors
+    - each 'assets' directory has three sub-directories
+      - "javascripts"
+      - "stylesheets"
+      - "images"
+
+  - Manifest Files
+    - tells rails (via the sprokets gem) how to combine assets into single files (not for images though)
+    - can be found in "app/assets/stylesheets/applicaiton.css"
+    - 'require' are found in the comment block at the top fo the file
+    - default requires
+      - "*= require_tree ." : includes all files in app/assets/stylesheets
+      - "*= require_self" : incless 'application.css' itself
+
+  - Preprocessor Engines
+    - after assets are assembled, files are run through preprocessor engines so manifest file can combine and deliver to browser
+    - commone preprocessor engines: '.scss' (Sass), '.coffee' (CoffeeScript), '.erb' (embedded Ruby)
+    - these can be chained
+      - starts with last extension
+      - e.g. 'foobar.js.erb.coffee' will run though the CoffeeScript preprocessor first, then ERb
+
+  - Efficiency in Production
+    - compilation into single files also includes minification, which makes the file smaller but difficult to read
+    - does not work well for caching, if each page has its own file
+    - precompiling assets is best for production, but can be turned off in development for developers sake (??HOW??)
+
+5.2.2 | Syntatcially Awesome Stylesheets
+  - improves css, 'nesting' and 'variables' ('mixins' covered in a later chapter)
+  - .scss is strictly a superset of CSS (only adds)
+  - every valid css file is a valid scss file
+
+  - Nesting
+    - common to nest selectors which share a common root selector
+    - use '&' when explicitly referring to nesting selector, otherwise resolved to 'nesting nested'
+    - i.e.
+      div { ... }        ->       div {
+      div a { ... }      ->         a { ... }
+      div:hover { ... }  ->         &:hover { ... } }
+
+  - Variables
+    - prefixed with '$'
+    - assigned like any other css property
+      - e.g. '$lightGray: #999; div { color: $lightGray; }
+    - LESS (used by Bootstrap) uses '@' to denote variables
+    - 'sass-bootstrap' gem allows use of Bootstrap variables defined in LESS to be referenced in SASS syntax
+      - ** variables only available in files which bootstrap is imported
+
+
+5.3 | Layout Links
+  - 
+
+
+
+
+
+
 
 
 Chapter 4 | Rails Flavored Ruby #############################################################################
@@ -220,7 +332,7 @@ Chapter 4 | Rails Flavored Ruby ################################################
 
   5) Follow Ruby Koans
     http://rubykoans.com/
-    
+
       - rewrite hash it is called on
 
 
