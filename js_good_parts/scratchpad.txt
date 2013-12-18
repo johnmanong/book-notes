@@ -1,0 +1,35 @@
+// Hanoi Tower
+
+function hanoi(disc, src, aux, dest) {
+	if(disc > 0) {
+		hanoi(disc-1, src, dest, aux);
+		console.log("Move disc " + disc + " from " + src + " to " + dest);
+		hanoi(disc-1, aux, src, dest);
+	}
+}
+
+hanoi(3, "src", "aux", "dest")
+
+1) hanoi(3, "src", "aux", "dest")
+	1.1) hanoi(2, "src", "dest", "aux")
+		1.1.1) hanoi(1, "src", "aux", "dest")
+			1.1.1.1) hanoi(0, "src", "dest", "aux")		// break
+		1.1.1) hanoi(1, "src", "aux", "dest")			// print = 1 : "src" -> "dest"
+			1.1.1.2) hanoi(0, "aux", "src", "dest")		// break
+	1.1) hanoi(2, "src", "dest", "aux")					// print = 2 : "src" -> "aux"
+		1.1.2) hanoi(1, "dest", "src", "aux")
+			1.1.2.1) hanoi(0, "dest", "aux", "src")		// break
+		1.1.2) hanoi(1, "dest", "src", "aux")			// print = 1 : "dest" -> "aux"
+			1.1.2.2) hanoi(0, "src", "dest", "aux")		// break
+1) hanoi(3, "src", "aux", "dest")						// print = 3 : "src" -> "dest"
+	1.2) hanoi(2, "aux", "src", "dest")
+		1.2.1) hanoi(1, "aux", "dest", "src")
+			1.2.1.1) hanoi(0, "aux", "src", "dest")		// break
+		1.2.1) hanoi(1, "aux", "dest", "src")			// print = 1 : "aux" -> "src"
+			1.2.1.2) hanoi(0, "dest", "aux", "src")		// break
+	1.2) hanoi(2, "aux", "src", "dest")					// print = 2 : "aux" -> "dest"
+		1.2.2) hanoi(1, "src", "aux", "dest")
+			1.2.2.1) hanoi(0, "src", "dest", "aux")		// break
+		1.2.2) hanoi(1, "src", "aux", "dest")			// print = 1 : "src" -> "dest"
+			1.2.2.2) hanoi(0, "aux", "src", "dest")		// break
+RETURN
