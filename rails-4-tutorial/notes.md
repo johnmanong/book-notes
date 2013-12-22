@@ -16,7 +16,7 @@ Chapter N | title ##############################################################
 
 Chapter N | title #############################################################################
 
-Chapter 5 | Filling in the Layout #############################################################################
+# Chapter 5 | Filling in the Layout #############################################################################
 
 - Topics:
   - styling
@@ -33,12 +33,12 @@ Chapter 5 | Filling in the Layout ##############################################
   - Google HTML5 Shim (http://html5shim.googlecode.com/svn/trunk/html5.js)
   - Twitter bootstrap ()
 
-5.1 | Adding Some Structure
+## 5.1 | Adding Some Structure
   - "wireframes" : static mocks of page layout and design
   - Mockingbird is an online wireframing tool
   - creating new branch 'filling-in-layout'
 
-5.1.1 | Site Navigation
+### 5.1.1 | Site Navigation
   - IE conditional comments
     - i.e. <!-- [if lt IE 9] ... <!endif-->
   - html5 shim from Google of < IE 9
@@ -47,7 +47,7 @@ Chapter 5 | Filling in the Layout ##############################################
   - as mentioned in ch3, the 'yeild' method inserts the contents from the page into the layout
   - 'image_tag' : generates image tag, defaults 'alt' to filename (sans extension)
 
-5.1.2 | Bootstrap and Custom CSS
+### 5.1.2 | Bootstrap and Custom CSS
   - Twitter bootstrap build using LESS CSS (similar to SASS)
   - 'bootstrap-sass' gem translates bootstrap to Sass
   - ** installed 'SCSS' and 'SASS' packages into sublime
@@ -55,16 +55,16 @@ Chapter 5 | Filling in the Layout ##############################################
     - (inside of applicaiton class) -> 'config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif)'
   - add css stylings onto of bootstrap defaults
 
-5.1.3 | Partials
+### 5.1.3 | Partials
   - refactor page structure into logical chunks, uncluttering layouts/views
   - user the 'render' method to render partials
   - by convention file names start with an '_'
 
-5.2 | Sass and the Asset Pipeline
+## 5.2 | Sass and the Asset Pipeline
  - Asset Pipeline helps manage javascript, css, and image files
  - Sass is available by default in the asset pipeline
 
-5.2.1 | The Asset Pipeline
+### 5.2.1 | The Asset Pipeline
   - "asset directories" : default directories where js, css and image assets should go
   - "manifest files" : 
   - "preprocessor engine" : 
@@ -97,9 +97,9 @@ Chapter 5 | Filling in the Layout ##############################################
   - Efficiency in Production
     - compilation into single files also includes minification, which makes the file smaller but difficult to read
     - does not work well for caching, if each page has its own file
-    - precompiling assets is best for production, but can be turned off in development for developers sake (??HOW??)
+    - precompiling assets is best for production, but can be turned off in development for developers sake (debug_assets=true ?)
 
-5.2.2 | Syntatcially Awesome Stylesheets
+### 5.2.2 | Syntatcially Awesome Stylesheets
   - improves css, 'nesting' and 'variables' ('mixins' covered in a later chapter)
   - .scss is strictly a superset of CSS (only adds)
   - every valid css file is a valid scss file
@@ -121,8 +121,32 @@ Chapter 5 | Filling in the Layout ##############################################
       - ** variables only available in files which bootstrap is imported
 
 
-5.3 | Layout Links
-  - 
+## 5.3 | Layout Links
+  - rails assosciates a semantic name for the url and path associated with route
+  - variables (foo_path, foo_url) can be used instead of hardcoded string ('/foo')
+
+### 5.3.1 | Route tests
+  - use this to refactor spec test
+  - e.g. '/static_pages/about' -> about_path
+  - specs fail bc routes are not in correct form to generate this var
+
+### 5.3.2 | Rails Routes
+  - current "get 'static_pages/help'" does not generate route vars
+  - change to "match '/help', to: 'static_pages#help', via: 'get'"
+    - tells rails which path to match, which controller to route to, and http method
+    - generates named route 'help_path'
+      - help_path   -> '/help'
+      - help_url    -> 'http://localhost:3000/help'
+  - can define root path same way or special syntax
+    - "root 'static_pages#home'"
+      - root_path   -> '/'
+      - root_url    -> 'http://localhost:3000/'
+
+### 5.3.3 | Named Routes
+  - update stubbed href from "'#'" to appropriate "foo_path"
+  - simplifies layouts
+
+### 5.3.4 | Pretty Rspec
 
 
 
@@ -131,7 +155,7 @@ Chapter 5 | Filling in the Layout ##############################################
 
 
 
-Chapter 4 | Rails Flavored Ruby #############################################################################
+ # Chapter 4 | Rails Flavored Ruby #############################################################################
 
 - Rails console (rails c)
 
@@ -224,22 +248,22 @@ Chapter 4 | Rails Flavored Ruby ################################################
   4) take first 8 elements from now shuffled array
   5) join those 8 elements (letters) into a single string
 
-4.3.3 | Hashes and Symbols
+### 4.3.3 | Hashes and Symbols
   - like arrays, but indexed by more than just ints
   - does not guarantee preservation of order (if needed use array)
   - use symbols for keys, less baggage than strings
   - 'puts :name.inspect' == 'p :name'
 
-4.3.4 | CSS Revisited
+### 4.3.4 | CSS Revisited
   - ruby method calls, parens are optional
   - when hash is last arg, curly braces are optional
   - cannot use '-' in symbol names
 
 
-4.4 | Ruby Classes
+## 4.4 | Ruby Classes
   - classes are instantieated to create objects (everything is an object!)
 
-4.4.1 | Constructors
+### 4.4.1 | Constructors
   - i.e. "foo = String.new('bar')"
   - similarily, "Array.new, Hash.new"
     - "Hash.new(0)" sets a value for unknown keys
@@ -247,7 +271,7 @@ Chapter 4 | Rails Flavored Ruby ################################################
   - "instance of a class" : object return when calling the class constructor
   - "instance methods" : methods called on the instance (object) of the class
 
-4.4.2 | Class Inheritance
+### 4.4.2 | Class Inheritance
   - call "obj.class" to get class back; "obj.class.superclass" returns the super class (parent class)
     - i.e.
       s = String.new
@@ -257,7 +281,7 @@ Chapter 4 | Rails Flavored Ruby ################################################
         > Object
   - to define a class which inherits from another: "def Word < String ..."
 
-4.4.3 | Modifying a Built in Class
+### 4.4.3 | Modifying a Built in Class
   - Ruby allows you to open and extend built in classes by simply redefining them
     - i.e.
       class String 
@@ -268,14 +292,14 @@ Chapter 4 | Rails Flavored Ruby ################################################
   - while this is very powerful, be careful, you should have a REALLY GOOD reason to do so
   - Rails does this out of the box (i.e. present?, blank? are not std Ruby)
 
-4.4.4 | A Controller Class
+### 4.4.4 | A Controller Class
   - controllers are classes too
     - i.e. 
       StaticPagesController < ApplicationController < ActionController::Base < ActionController::Metal < AbstractController::Base < Object < BasicObject
   - controllers are classes too, but actions aren't intended to return anything
   - Rails classes are not always pure Ruby classes in this sense
 
-4.4.5 | A User Class
+### 4.4.5 | A User Class
   - "attr_accessor" : attribute accessor, creates setters and getters for instance variables (@var)
   - "@var" : instance variable
     - in Ruby, generally used for vars which need to be available throughout a class
@@ -287,10 +311,10 @@ Chapter 4 | Rails Flavored Ruby ################################################
     - can assign values through arg hash
   - include class file in rails console: "require './example_class_at_root'"
 
-4.5 | Conclusion
+## 4.5 | Conclusion
   - will use classes in ch5 and beyond!
 
-4.6 | Exercises
+## 4.6 | Exercises
   1) create a shuffle string method
     def string_shuffle(s)
       s.split('').shuffle.join
@@ -337,7 +361,7 @@ Chapter 4 | Rails Flavored Ruby ################################################
 
 
 
-Chapter 3 | Mostly static web pages #############################################################################
+# Chapter 3 | Mostly static web pages #############################################################################
 
 - start of sample app (rest of tutorial)
 - design process (Behavior Driven Design, BDD)
@@ -403,7 +427,7 @@ Chapter 3 | Mostly static web pages ############################################
     6) Repeat steps 2–5 as necessary.
     7) When reaching a natural stopping point (such as before a commit), run rspec spec/ at the command line to confirm that the entire test suite is still green.
 
-Chapter 2 #############################################################################
+# Chapter 2 #############################################################################
 
 - creating a new app
 $ rails new <appname>
@@ -425,7 +449,7 @@ $ bundle exec rake db:migrate
 	- allows calls such as 'User.microposts' to get all posts for a given user
 
 
-Chapter 1 #############################################################################
+# Chapter 1 #############################################################################
 - creating git repo and pusing
 $ git remote add origin https://github.com/<username>/<appname>.git
 $ git push -u origin master
