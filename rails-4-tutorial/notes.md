@@ -147,7 +147,28 @@ Chapter N | title ##############################################################
   - simplifies layouts
 
 ### 5.3.4 | Pretty Rspec
+  - use named route var in tests for cleanup
+    - use before {} at the top of describe block to DRY up tests
+      - this block runs before each test case in block and is used for shared initialization
+  - test descriptions and requirements are redundant
+    - subject {} can also DRY up tests
+    - use subject {} to associate a variable with 'should'
+      - e.g.
+        OLD:
+        it "should have the content 'Sample App'" do    # description
+          expect(page).to have_content('Sample App')    # requirement
+        end
 
+        NEW:
+        subject { page }
+        it { should have_content('Sample App') }
+  - when using blocks like 'subject' and 'before' declare as high as possible for max DRY
+  - create file for spec utility functions
+    - essentially duplicte from ch4 (applicaiton_helper.rb)
+    - create utility to return full title
+    - two implementations right now
+
+## 5.4 | User Signup:  A first step
 
 
 
