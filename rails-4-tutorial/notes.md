@@ -155,7 +155,7 @@ Chapter N | title ##############################################################
 
 
 
- # Chapter 4 | Rails Flavored Ruby #############################################################################
+# Chapter 4 | Rails Flavored Ruby #############################################################################
 
 - Rails console (rails c)
 
@@ -427,7 +427,7 @@ Chapter N | title ##############################################################
     6) Repeat steps 2–5 as necessary.
     7) When reaching a natural stopping point (such as before a commit), run rspec spec/ at the command line to confirm that the entire test suite is still green.
 
-# Chapter 2 #############################################################################
+# Chapter 2 | A Demo App #############################################################################
 
 - creating a new app
 $ rails new <appname>
@@ -449,7 +449,7 @@ $ bundle exec rake db:migrate
 	- allows calls such as 'User.microposts' to get all posts for a given user
 
 
-# Chapter 1 #############################################################################
+# Chapter 1 | From Zero to Deploy #############################################################################
 - creating git repo and pusing
 $ git remote add origin https://github.com/<username>/<appname>.git
 $ git push -u origin master
