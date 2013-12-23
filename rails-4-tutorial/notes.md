@@ -168,8 +168,57 @@ Chapter N | title ##############################################################
     - create utility to return full title
     - two implementations right now
 
-## 5.4 | User Signup:  A first step
+## 5.4 | User Signup: A first step
+  - will create second controller, Users controller
+  - will complete work to allow users to sign up in ch 6 and 7
 
+### 5.4.1 | Users Controller
+  - create new controller
+    - generate:
+      $ rails g controller Users new --no-test-framework
+    - resulting controller: app/controllers/users_controller.rb
+    - resulting view: app/views/users/new.html.erb
+
+### 5.4.2 | Signup URL
+  - generated route path '/users/new', but want '/signup'
+  - start with integration testing
+    - generate:
+      $ rails g integration_test user_pages
+  - can run tests several ways
+    $ bundle exec rspec spec/requests/user_pages_spec.rb    # run spec file
+    $ bundle exec rspec spec/requests/                      # run all specs in requests dir
+    $ bundle exec rspec spec/                               # run all specs
+    $ bundle exec rake spec                                 # run all specs (needs test db, TODO ch 7)
+    $ bundle exec rake                                      # run all specs (needs test db, TODO ch 7)
+  - add route for "match 'signup"
+  - also leave "get 'users/new'"
+    - auto generated
+    - does NOT follow REST
+    - needed to get 'users/new' routing to work
+    - will get cleaned up in ch7
+  - changed title and content in new.html.erb to pass spec
+  - added 'signup_path' to link on homepage (replace stub)
+
+## 5.5 | Conclusion
+  - this chapter, adding and cleaning up layouts and routes
+  - next: sign up, sign in/out
+  - then: add microposts
+  - then: follow other users
+  - update git repo
+    - merge feature branch
+
+  - TODO:
+    * setup Heroku
+    * push to Heroku
+
+## 5.6 | Exercises
+  1) Use Capybara's 'have_selector' method to check for html elements, and additionally check the text of those elements. Used to replace 'have_content' which can be too broad
+
+  2) DRY up spec test for static pages using Rspec's shared examples functionality and let. 'let' allows you to define local variables (as opposed to instance variables which are created upon assignment). 'shared examples' allow you to share a set of common tests which can use local vars
+
+  3) Add spec test to click through links on page and check title
+
+  4)
 
 
 
