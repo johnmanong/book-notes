@@ -54,7 +54,6 @@
   - will defined a user table with name and email columns
   - ActiveRecord will figure out what attrs the User obj will have from this table
 - generate User controller: `$ rails generate controller Users new --no-test-framework`
-  
     $ rails generate controller Users new --no-test-framework
 
   
