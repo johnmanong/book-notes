@@ -10,6 +10,55 @@
 
 # Chapter 6 | Modeling Users #############################################################################
 
+- Topics
+  - user model
+  - user validation
+  - secure pw
+
+- chapters 6-9, will create full login/authentication system
+  - ch 6, create data model
+  - ch 7, sign up and create profile page
+  - ch 8, sign in and out
+  - ch 9, protect pages from improper access
+- pre-rolled auth solutions
+  - Clearance
+  - Authlogic
+  - Devise
+  - CanCan
+  - OpenId*
+  - OAuth*
+    * general solutions are not Rails specific
+
+- create new branch 'modeling-users'
+
+## 6.1 | User Model
+- end goal to create signup, currently have nowhere to store it
+- Rails default data struct for data model is model
+  - M in MVC
+- persistence through database
+- default lib to interact with the database is ActiveRecord
+  - comes from 'active record pattern' named in Patterns of Enterprise Application Architecture by Martin Fowler.
+  - allows interaction with data w/o having to use underlying SQL lang used by relational dbs
+- Rails features 'migrations' which allows data definitions in Ruby, no SQL Data Definition Language (DDL) needed
+- Allows developer to abstract underlying db technology
+  - current setup:
+    - SQLite for development
+    - PostgresSQL for deployment on heroku
+
+### 6.1.1 | Database Migrations
+- previously defined a User class with name and email fields, but lacked persistence
+- User model will have name and email (acts as unique username)
+  - implemented via Ruby's 'attr_accessor' method
+- Rails models do not have to have attrs explicitly defined
+  - uses relations db with tabels, data rows and attr columns
+  - will defined a user table with name and email columns
+  - ActiveRecord will figure out what attrs the User obj will have from this table
+- generate User controller
+  `$ rails generate controller Users new --no-test-framework`
+
+
+
+
 # Chapter 5 | Filling in the Layout #############################################################################
 
 - Topics:
