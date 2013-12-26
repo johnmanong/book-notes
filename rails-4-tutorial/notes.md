@@ -53,11 +53,115 @@
   - uses relations db with tabels, data rows and attr columns
   - will defined a user table with name and email columns
   - ActiveRecord will figure out what attrs the User obj will have from this table
-- generate User controller: `$ rails generate controller Users new --no-test-framework`
-    
-    rails generate controller Users new --no-test-framework
+- used to generate generate User controller: 
+  `$ rails generate controller Users new --no-test-framework`
+- analogous method to generate model:
+  `$ rails generate model User name:string email:string`
+  - model names are singular, as opposed to controller names which are plural
+  - defines model with two string attrs, name and email
+  - creates migration to update db
+  - creates users table with name and email columns
+- migrations are prefixed with a timestamp to avoid collisions
+- migration has 'change' method, which uses 'create_table'
+- 'create_table' takes a block and one block var (defaults to 't')
+- uses plural 'users', which follows Rails convention: Model is singular, db is plural
+- 't.timestamps' creates two magic columns, one for 'created_at', one for 'updated_at'
+- once migration is defined/generated, need to run migration to affect db
+  `$ bundle exec rake db:migrate`
+- migrations can also provide a way to roll back or undo migration
+  - to undo one migration: `$ bundle exec rake db:rollback`
+  - uses 'drop_table' method
+- 'change' method can infer that 'create_table' and 'drop_table' are opposites
+- for irreversable migrations:
+  - seperate 'up' and 'down' methods must be defined
+  - e.g. deleting a column in a table
 
-  
+### 6.1.2 | The Model File
+- migration updated 'db/development.sqlite3' file with 'users' table, which has columns:
+  - id
+  - name
+  - email
+  - created_at
+  - updated_at
+- also creates the 'User' model in 'app/models/user.rb'
+  - this model inherits from 'ActiveRecord::Base' class
+
+### 6.1.3 | Creating User Objects
+- run Rails console in sandbox (no changes to db): `$ rails console --sandbox`
+- Rails console automatically loads Rails env, so models are readily available
+- create new User object: `>> User.new`
+- with no args, all attributes are 'nil'
+- ActiveRecord allows objects to be created with an initialization hash
+  `>> User.new(name: 'John', email:'john@example.com')`
+- creating object via '.new' does NOT touch the database
+  - to save, call '.save' on the object
+  - returns 'true' when success, 'false' when failure
+- 'id', 'created_at', 'updated_at' were all nil when the obj was created in memory
+  - when obj is saved to db, these columns are auto-populated and model attrs set
+- notes that timestamps are in UTC time
+- as with User class, attrs of the instances of the User model can be accessed via dot notation
+- can create obj and save to db in one step:
+  `user.create()`
+  - this return the obj itself instead of true/false
+  - (?) what is returned if it cannot be saved to db?
+- opposite of create is destroy
+  `user.destroy`
+  - destroy method returns obj
+  - destoryed objs are still available in memory, but not in db
+  `x.destory
+   => #<User ... >
+   x
+   => #<User ... >
+   User.all
+   => <does not include x>`
+- how do we ensure objs are destoryed or that non-destoryed objs are in db?
+
+### 6.1.4 | Finding User Objects
+- can search table for rows with matching id
+  `User.find(<id>)`
+  e.g. `User.find(1)
+        => #< User id: 1 ... ?`
+- when no record was found, an exception is raised (specific exception: ActiveRecord::RecordNotFound)
+- can also find by specific attrs:
+  `User.find_by_<attr>(<attr value>)`
+  e.g. `User.find_by_email('john@example.com')`
+- starting in Rails 4, the preferred way to do this is by using 'find_by' and specifying field in arg
+  `User.find_by(email: "john@example.com")`
+- 'find_by' is inefficient over large sets of data (more on this later)
+  - database indices! (6.2.5)
+- other find methods
+  - 'User.first' : returns first record in table
+  - 'User.last' : returns last record in table
+  - 'User.all' : returns all records in table in an array
+
+6.1.5 | Updating User Objects
+- two basic ways to update objs which
+  1) direct assignment + save
+    `>> user                                 # this is a ref to entry in db
+    => #< User ... >
+    >> user.email = "john@somewhere.com"
+    => "john@somewhere.com"
+    >> user.save
+    => true`
+
+    - will not persist if you forget to call '.save'
+    - updates 'updated_at' column automatically
+
+  2) '.update_attributes'
+    `>> user.update_attributes(name: 'dude', email: 'dude@abides.net')
+    => #< User ... >
+    >> user.name
+    => "dude"
+    >> user.email
+    => "dude@abides.net"`
+
+    - updates and saves in one command
+    - returns true if success
+    - if validation fails (such as req'd pw), 'update_attributes' will fail
+    - use singular 'update_attribute' to update one attribute
+
+- 'user.reload' can be used to reload obj in memory from db (also 'user.reload.email')
+
 
 
 
