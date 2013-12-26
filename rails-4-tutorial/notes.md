@@ -134,9 +134,10 @@
   - 'User.last' : returns last record in table
   - 'User.all' : returns all records in table in an array
 
-6.1.5 | Updating User Objects
+### 6.1.5 | Updating User Objects
 - two basic ways to update objs which
-  1) direct assignment + save
+
+1) direct assignment + save
     >> user                                 # this is a ref to entry in db
     => #< User ... >
     >> user.email = "john@somewhere.com"
@@ -144,10 +145,10 @@
     >> user.save
     => true
 
-    - will not persist if you forget to call '.save'
-    - updates 'updated_at' column automatically
+  - will not persist if you forget to call '.save'
+  - updates 'updated_at' column automatically
 
-  2) '.update_attributes'
+2) '.update_attributes'
     >> user.update_attributes(name: 'dude', email: 'dude@abides.net')
     => #< User ... >
     >> user.name
@@ -155,10 +156,10 @@
     >> user.email
     => "dude@abides.net"
 
-    - updates and saves in one command
-    - returns true if success
-    - if validation fails (such as req'd pw), 'update_attributes' will fail
-    - use singular 'update_attribute' to update one attribute
+  - updates and saves in one command
+  - returns true if success
+  - if validation fails (such as req'd pw), 'update_attributes' will fail
+  - use singular 'update_attribute' to update one attribute
 
 - 'user.reload' can be used to reload obj in memory from db (also 'user.reload.email')
 
