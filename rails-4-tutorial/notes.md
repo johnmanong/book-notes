@@ -137,23 +137,23 @@
 6.1.5 | Updating User Objects
 - two basic ways to update objs which
   1) direct assignment + save
-    `>> user                                 # this is a ref to entry in db
+    >> user                                 # this is a ref to entry in db
     => #< User ... >
     >> user.email = "john@somewhere.com"
     => "john@somewhere.com"
     >> user.save
-    => true`
+    => true
 
     - will not persist if you forget to call '.save'
     - updates 'updated_at' column automatically
 
   2) '.update_attributes'
-    `>> user.update_attributes(name: 'dude', email: 'dude@abides.net')
+    >> user.update_attributes(name: 'dude', email: 'dude@abides.net')
     => #< User ... >
     >> user.name
     => "dude"
     >> user.email
-    => "dude@abides.net"`
+    => "dude@abides.net"
 
     - updates and saves in one command
     - returns true if success
@@ -163,7 +163,26 @@
 - 'user.reload' can be used to reload obj in memory from db (also 'user.reload.email')
 
 
+## 6.2 | User Validations
+- currently, there are no validation checks on User model attrs
+  - name should be non-blanks
+  - email should be in a particular format, and unique (since email is used as user name)
+- ActiveRecord allows for checks through validations
+- common validations
+  - presence
+  - length
+  - format
+  - uniqueness
+  - confirmation
+- violations give error messages when validations fail
 
+### 6.2.1 | Initial User Tests
+- user spec (app/spec/models/user_spec.rb) is practically blank since we passed the `--no-test-framework` flag at generation
+- 'pending' is a placeholder to inidicate we should fill it in
+- we can run the test by running the following:
+    $ bundle exec rake db:migrate
+    $ bundle exec rake test:prepare
+    $ bundle exec rspec spec/models/user_spec.rb 
 
 
 
