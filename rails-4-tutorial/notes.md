@@ -184,9 +184,9 @@
 - 'pending' is a placeholder to inidicate we should fill it in
 - we can run the test by running the following:
 
-    $ bundle exec rake db:migrate
-    $ bundle exec rake test:prepare
-    $ bundle exec rspec spec/models/user_spec.rb 
+  $ bundle exec rake db:migrate
+  $ bundle exec rake test:prepare
+  $ bundle exec rspec spec/models/user_spec.rb 
 
 
 
