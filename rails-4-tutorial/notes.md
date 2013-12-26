@@ -138,6 +138,7 @@
 - two basic ways to update objs which
 
 1) direct assignment + save
+
     >> user                                 # this is a ref to entry in db
     => #< User ... >
     >> user.email = "john@somewhere.com"
@@ -149,6 +150,7 @@
   - updates 'updated_at' column automatically
 
 2) '.update_attributes'
+
     >> user.update_attributes(name: 'dude', email: 'dude@abides.net')
     => #< User ... >
     >> user.name
