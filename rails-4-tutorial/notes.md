@@ -4,6 +4,165 @@
 *This book provides a tutorial covering Ruby basics, Rails basics, deployment with Heroku, and building a twitter clone from the ground up. This book has multiple versions, these notes are for the Rails 4 version*
 
 
+
+# working chapter #############################################################################
+
+
+# Chapter 7 | Sign up #############################################################################
+
+#### Topics:
+- showing users
+  - gravatar
+- signup form
+- sign up failure
+- signup success
+
+#### References:
+- Railscast for custom Rails environments: http://railscasts.com/episodes/72-adding-an-environment
+- Factory Girl: http://github.com/thoughtbot/factory_girl
+- Gravatar: http://gravatar.com/
+- CarrierWave: https://github.com/jnicklas/carrierwave
+- Paperclip: https://github.com/thoughtbot/paperclip
+- MD5 hash: http://en.wikipedia.org/wiki/MD5
+
+#############################################################################
+
+
+- user will signup via HTML *form submit*
+- once user successfully signs up, show profile page (show user)
+  - first step in REST arch for users
+- to make profile page, we need a user in db (chicken and egg), but we added one via console in previous chapter
+- create new branch
+
+    $ git checkout -b sign-up
+
+## 7.1 | Showing users
+- end goal is to show user profile
+  - profile picture
+  - basic user data
+  - list of microposts
+  - number following
+  - number of followers
+
+### 7.1.1 | Debug and Rails environments
+- using conditional check on environment and *debug* method, print params in **application.html.erb**
+  - only render when in development env
+  - this is a default Rails env, can add more
+  - also add basic styling to **custom.css.scss**
+  - this styling will include a mixin for box sizing
+- *debug* method prints useful info (controller, action, ...) in YAML format
+- Rails environments
+  - 3 default environments: *test*, *development*, *production*
+  - Rails provides **Rails** object with *env* attributes, which has boolean methods to check env
+    - e.g. `Rails.env.test?`, `Rails.env.development?`, `Rails.env.production?`
+  - to run console in another env, pass it as an arg
+    - e.g. `$ rails console test`
+  - to start rails server in another env, pass '--environment' flag along with env
+    - e.g. `$ rails server --environment production`
+  - to run rake commands in another env, need to set the **RAILS_ENV** var
+    - e.g. `$ bundle exec rake db:migrate RAILS_ENV=production`
+  - these three different ways to specify env are not interchangable
+  - env info is also available in heroku console (which should be production)
+
+### 7.1.2 | A user resource
+- will represent User data as *resources* (REST) which can be created, shown, updated, and destroyed
+- REST
+  - data as resources
+
+  | action     | http method |
+  |------------| ------------|
+  | create     | POST        |
+  | show       | GET         |
+  | update     | PATCH/POST  |
+  | destroy    | DELETE      |
+
+  - resources are referred to by resource name and unique identifier
+- for users, User is the resource, and the id is the identifier
+  - e.g. url for user with id=1: `.../users/1`
+  - right now, get a routing error
+- when Rail's REST features are active, GET requests are routed to **show** action
+- to get REST style URLs to work, declare resources in **config/routes.rb**;
+
+  SampleApp::Application.routes.draw do
+    resources :users
+    root  'static_pages#home'
+    ...
+
+- this adds all RESTful urls for users resource
+  - Table 7.1 has all mappings
+- now error for missing 'show' action in controller
+- add new view at 'app/views/users/show.html.erb' and fill in to display user name and email
+  - assume existence of user instance variable
+- define show action in users_controller
+  - define @user
+  - use **User.find** method, passing in the id to get the user from the databse
+  - getting id from params hash returns string (always), **find** converts to int
+  - view should render now
+  - will throw error if no user exists with that id
+
+### 7.1.3 | Testing the show user page
+- using integration tests for pages associated with Users resource
+- update 'spec/user_pages_spec.rb'
+  - add spec test for profile page
+  - use *user_path* named route, passing it a User model object
+  - write basic test for user name in content and title
+- could use ActiveRecord **User.create** to create our model object, but factories are more convenient
+- add *Factory Girl* gem to project, in **:test** group: `gem 'factory_girl_rails', '4.2.1'`
+  - TODO check version
+- Factory Girl (from thoughtbot)
+  - defines DSL
+  - specialized for defining ActiveRecord objects
+  - syntax: Ruby blocks and custom methods
+  - advanced features will be leveraged in later chapters
+- all factories in **spec/factories.rb** (auto loaded by rspec)
+  - add code for User factory
+  - passing ':user' symbol tells FactoryGirl definition for User model object
+- all specs should be green (may need to bounce spork)
+- notice that specs are slow
+  - not Factory Girl's fault!
+  - bcrypt is slow, which makes it harder to attack
+  - this tradeoff between speed and security is ideal in production, but not testing
+  - update **config/environments/test.rb** to change *cost factor*
+    - this will increase speed, but reduce security (only in test env)
+
+### 7.1.4 | A Gravatar image and a sidebar
+- for view development, less focus on structure/testing
+- will resume TDD for pagination
+- start with adding Globally Recongnizatble Avatar (Gravatar)
+  - free service to associate info + image with email address/account
+  - this way we do not have to manage our own images
+  - resources if you need to manage images
+    - CarrierWave (https://github.com/jnicklas/carrierwave)
+    - Paperclip (https://github.com/thoughtbot/paperclip)
+- define helper function **gravatar_for** which takes a user and returns a Gravatar image
+  - add line to view (tests fail due to template error)
+- create file for helpers associated with **user_controller**
+- Gravatar URLs are based on a MD5 hash of the user's email
+  - implemented by **hexdigest** method in the **Digest** library
+  - e.g. `Digest::MD5::hexdigest("some.email@inter.net".downcase)`
+  - NOT case insensitive, like email
+- define helper method **gravatar_for** in **app/helpers/users_helper.rb**
+  - construct url using user email and MD5 hash
+  - generate image tag with url with class "gravatar"
+  - specs should pass
+  - TODO verify it works (no internet access atm)
+- default Gravatar image is shown when email does not map to a valid email
+- set example user to 'example@railsturtorial.com' for a valid example account (Rails logo!)
+  - will use *aside* HTML element along with Bootstrap classes *row* and *span4* for sidebar
+  - update **app/views/users/show.html.erb**
+- update **custom.css.scss** for Gravatar and sidebar styling
+
+
+## 7.2 | Sign up form
+
+
+
+#############################################################################
+
+
+
+
+
 # General Notes ###################################################################################
 
 ## HEROKU ###################################################################################
@@ -981,19 +1140,38 @@ $ bundle exec rake db:migrate
 6) Spend a couple of hours playing with Rublar        #TODO
 
 
-# Chapter 7 | Sign up #############################################################################
+
 
 
 # Chapter 8 | Sign in, Sign out #############################################################################
 
+#### Topics:
+
+#### References:
+
+
 
 # Chapter 9 | title #############################################################################
+
+#### Topics:
+
+#### References:
+
 
 
 # Chapter 10 | title #############################################################################
 
+#### Topics:
+
+#### References:
+
+
 
 # Chapter 11 | title #############################################################################
+
+#### Topics:
+
+#### References:
 
 
 
