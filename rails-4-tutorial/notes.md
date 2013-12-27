@@ -431,10 +431,23 @@
     $ git checkout master
     $ git merge modeling-users
 
+## 6.5 | Exercises
+1) add test as given
+2) change in user model *before_save* works, '!' denotes to change field
+3) add email address with '..' to spec test, should fail.
+  change regex from
 
+    /\A[\w+\-.]+@[a-z\d\-.]+\.[a-z]+\z/i
 
+  to
 
+    /\A[\w+\-.]+@[a-z\d\-]+(\.[a-z]+)*\.[a-z]+\z/i
 
+  This restricts what comes between the '@' and the final '.'. Instead of at least one char, digit, '-' or '.', you need at least one char, digit or '-', then zero or more ('.' followed at least one char).
+
+4) Read Rails API for **ActiveRecord::Base**          #TODO
+5) Read Rails API for *validates*                     #TODO
+6) Spend a couple of hours playing with Rublar        #TODO
 
 
 
