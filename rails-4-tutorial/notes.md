@@ -383,7 +383,56 @@
   - take arg of symbol, and block whose return value is assigned to local variable with the symbol's name
   - *memoizes* value (stores value between invocations)
 - add test for password length
-- 
+- at this point, with **has_secure_password** uncommented, all tests but the length validation should pass
+- in block describing auth method, let only hits the db once
+
+### 6.3.4 | User has secure password
+- with Rails 3.0 and before, auth system was rolled from scratch; now bundled with lastest version of Rails
+- will only need a few lines of code to complete the system
+- add validation for min pw length (min 6) to User class
+- precense validation for password attribute is added automatically by **has_secure_password**
+- second, we need to do the following (provided by **has_secure_password**):
+  - add *password* and *password_confirmation* attributes
+  - require presence
+  - require that they match
+  - add **authenticate** method to compare encrypted pw to **password_digest**
+- to inspect source code for this *secure_password.rb*
+  - automagically creates **password_confirmation** and validation for **password_digest** attribute
+- all tests should be green
+- if you get warnings regarding *I18n.enforce_available_locales*
+  - find in 'config/application.rb' and change config setting
+
+### 6.3.5 | Creating a user
+- basic user model is complete
+- create a user via Rails Console since we cannot sign in via web (ch 7)
+- start rails console w/o sandbox:
+    User.create(name: "The Dude", email: "dude@abides.com", password: "foobar", password_confirmation: "foobar")
+- value in **password_digest** column is encrypted version of "foobar"
+- can test authenticate method:
+
+    >> user.authenticate("invalid")
+    => false
+    >> user.authenticate("foobar")
+    => #<User ... >
+
+
+## 6.4 | Conclusion
+- in this chapter
+  - created user model with name, email and various password attrs
+  - several validations for important constraints
+  - spec testing
+  - ability to auth users based on comparision of encrypted pw input
+  - leverage **validates** method to add model validations
+  - leverage **has_secure_password** for user pw management and auth
+- this will provide basic Rails infrastructure for user sign up
+- merge back into master
+
+    $ <add and commit to local>
+    $ git checkout master
+    $ git merge modeling-users
+
+
+
 
 
 
