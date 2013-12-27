@@ -326,6 +326,67 @@
   - think book index: instead of scanning text for match, look it up in the reference to find pages
 
 ## 6.3 | Adding a secure password
+- will implement pw with confirmation and store encrypted version in db
+- add a way to authenticate a user based on pw
+  - encrypt submitted pw
+  - compare encrypted input to db
+  - even if db is compromised, pws are encrypted
+- most work done by Rails method **has_secure_password**
+
+### 6.3.1 | An encrypted password
+- add **password_digest** column to user table
+  - digest comes from terminology of *cryptic hash functions*
+  - storing encrypted pw means someone can't sign in even if they get a copy of the database
+- make use of state-of-the-art hash function called *bcrypt*
+  - irreversibly encrypt to form pw hash
+  - install gem `'bcrypt-ruby', '3.1.2'`
+
+  TODO: install gem
+  
+
+- add spec test to check for this column (test should fail)
+- add migration `$ rails generate migration add_password_digest_to_users password_digest:string`
+  - ending the naeme with '_to_users' + column allows Rails to auto-gen entire migration
+- run migration, prepare test db, and all specs should be green
+
+### 6.3.2 | Password and confirmation
+- conventional to let the model handle pw, user ActiveRecord to enfore constraint
+- **has_secure_password** adds two attributes to the model
+  - 1) password
+  - 2) password_confirmation
+  - these are *virtual* attributes which are temporary and do not get persisted to the database
+- start with 'respond_to' tests and update test model
+- add test to enforce presence of password
+- add test when pw and pw confirmation do not match
+- adding **has_secure_password** to end of User model allows all tests to pass
+- for now, comment out this line to get passes to fail
+- *version of bcrypt listed '3.1.2' does not seem to load*
+
+### 6.3.3 | User authentication
+- final step is to auth a user
+  - first, find user by email (acting user name)
+      - `user = User.find_by(email: email)`
+  - second, auth the user based on given password
+      - `current_user = user.authenticate(password)`
+      - if pw matches, returns uers; otherwise returns false
+      - will implement in ch 8
+- remaining tests implemented by **has_secure_password**, uncomment to get green
+- add rspec test to check if user responds to **:authenticate**
+  - **before** block should have the user to db
+  - use **let** method to fetch user from db by searching for email
+  - test that user is returned when password is valid
+  - test that false isreturn when password is not valid
+  - **specify** can be used interchangibly with **it** and should be used when **it** would sound awkward
+- using **let**
+  - allows for local variables inside tests
+  - syntax is odd, but similar function to variable assignment
+  - take arg of symbol, and block whose return value is assigned to local variable with the symbol's name
+  - *memoizes* value (stores value between invocations)
+- add test for password length
+- 
+
+
+
 
 
 # Chapter 5 | Filling in the Layout #############################################################################
