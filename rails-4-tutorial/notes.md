@@ -24,6 +24,7 @@
 - CarrierWave: https://github.com/jnicklas/carrierwave
 - Paperclip: https://github.com/thoughtbot/paperclip
 - MD5 hash: http://en.wikipedia.org/wiki/MD5
+- CSRF attack: http://stackoverflow.com/questions/941594/understand-rails-authenticity-token
 
 #############################################################################
 
@@ -153,7 +154,57 @@
 - update **custom.css.scss** for Gravatar and sidebar styling
 
 
-## 7.2 | Sign up form
+## 7.2 | Signup form
+- goal of this section is to create a sign up page with four fields: name, email, pw, and pwconf
+- clean/reset database
+  - remove data: `bundle exec db:reset`
+  - prepare db: `bundle exec test:prepare`
+  - bounce local server
+
+### 7.2.1 | Test for user signup
+- use rspec and capybara to verify valid and invalid input to the signup form
+- can enter test into input fields with **fill_in** method
+- can click butons with **click_button** method
+- to verify valid and invalid input during tests, use ActiveRecord's **count** method
+  - e.g. `User.count`  => 0
+  - when invalid info is submitted, count should not change
+  - when valid info is subimttied, count +1
+  - **change** method used to calc count before/after execution of *expects* body
+- in Rspec, **eq** = equals
+- remember to factor out common code into memorized local (submit button)
+- put code run in every case in *before* block
+- at this point, fails due to lack of submit button
+- to get these basic tests to pass:
+  - create expected elements on page
+  - route submit button to correct endpoint
+  - create user in db, only if data is valid
+
+### 7.2.2 | Using *form_for*
+- **form_for** is an ActiveRecord helper method which takes an ActiveRecord obj and creates a form from it's attributes
+- in Rails 2.x and before, used `<% form_for ... %>`; later versions use `<%= form_for ... %>`
+- form_for
+  - takes a block with one variable
+  - uses variable to call methods to generate HTML form elements (text_input, label, radio button, submit, password field)
+  - generate code to set attr of obj passed in
+  - symbol passed to these methods correspond to attributes of the Active Record obj
+- currently page breaks and tests fail since **@user** is nil
+  - rspec: can pass '-e' flag which takes string and matches test with matching description string
+  - (?) claims this is different than substring matching, but cannot reproduce
+- to fix, we need to create a new User obj in the **user** controller, **new** action
+  - e.g. `@user = User.new`
+  - some specs still fail since *subit* does not map to an action
+- update styling in **custom.css.scss**
+
+### 7.2.3 | The form HTML
+- ids of HTML input elements are "#{obj}_#{attr}"
+- Rails generates auth token to prevent *cross-site request forgery (CSRF)*
+- **text_field** generates input element with type "text"
+- **password_field** generates input element with type "password"
+- **label** generates label element with ref to input(?)
+- **name** field is set on each HTML element, which allows RAILS to construct the hash
+- *form* tag is also generated, Rails populates with info about class, URL, an id, and a HTTP method
+
+## 7.3 | Signup failure
 
 
 
