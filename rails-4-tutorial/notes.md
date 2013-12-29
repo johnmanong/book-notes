@@ -291,9 +291,10 @@
 - we can piggyback on heroku's!
 - wah hoo!
 
-
-
-
+## 7.5 | Conclusion
+- build basics for user signup
+- ch 8 will tackle sign in/out
+- ch 9 and beyond fill in REST for user model, info update and security
 
 
 
