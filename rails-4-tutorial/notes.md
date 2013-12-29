@@ -26,6 +26,7 @@
 - MD5 hash: http://en.wikipedia.org/wiki/MD5
 - CSRF attack: http://stackoverflow.com/questions/941594/understand-rails-authenticity-token
 - SSL/TLS: http://en.wikipedia.org/wiki/Transport_Layer_Security
+- SSL endpoints: https://devcenter.heroku.com/articles/ssl-endpoint
 
 #############################################################################
 
@@ -283,6 +284,12 @@
 - will use Secure Sockets Layer (SSL), which is technically Transport Layer Security (TLS)
 - ensures that signup is secure and immune to *session hijacking*
 - merge changes to master branch
+- add line to production.rb to force SSL in this env
+- push to heroku: `git push heroku master`
+- run migration on heroku: `heroku run rake db:migrate`
+- if we were building our own site (say example.com), we would need to purchse ssl cert
+- we can piggyback on heroku's!
+- wah hoo!
 
 
 
