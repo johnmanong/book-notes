@@ -25,6 +25,7 @@
 - Paperclip: https://github.com/thoughtbot/paperclip
 - MD5 hash: http://en.wikipedia.org/wiki/MD5
 - CSRF attack: http://stackoverflow.com/questions/941594/understand-rails-authenticity-token
+- SSL/TLS: http://en.wikipedia.org/wiki/Transport_Layer_Security
 
 #############################################################################
 
@@ -203,8 +204,93 @@
 - **label** generates label element with ref to input(?)
 - **name** field is set on each HTML element, which allows RAILS to construct the hash
 - *form* tag is also generated, Rails populates with info about class, URL, an id, and a HTTP method
+- form and tests are still broken since user **create** method is not defined
+
 
 ## 7.3 | Signup failure
+- in this section, update form to accept invalid input, re-render page with list of errors
+
+### 7.3.1 | A working form
+- RESTful routing provided by `resources :users` maps *POST* requests to '/users' to **create** action
+- **create** action should create new User obj with **User.new** and save to db
+  - this section is concerned with implementing the failure to save and re-rendering page
+  - use result of **@user.save** to switch success/failure
+- now clicking the submit button doesn't work, but we can get some useful information about what is submitted
+  - params for this request is a hash of hashes
+  - keys within the *user* hash correspond to the names of the input tags
+- hash keys are passed to Users controller as symbols
+  - **params[:user]** is the hash of attrs we need for **User.new**
+  - worked in the past but was error prone and insecure by default
+  - as of Rails 4, this no longer works
+
+### 7.3.2 | Strong parameters
+- mass assignment as mentioned is convenient, but is dangerous and insecure since all user input is passed
+- previous versions of Rails used a method **attr_accessible** in the model layer to solve this
+- in Rails 4, preferred method is *strong parameters* in the controller layer
+  - allows us to specify which parameters are *required* and which are *permitted*
+- default behaviour does not allow mass assignment, so more secure by default
+- restrictures on params
+  - require: user
+  - permit: name, email, password, password_confirmation
+  - add private helper to access params (convention)
+  - pass output of this helper to **User.new**
+- only 1 spec failture! (since we cannot successfully save a user)
+
+### 7.3.3 | Signup error messages
+- Rails provides error messages based on model validations
+  - **obj.errors.full_messages** contains array of all error messages
+- add a partial to be rendered when there are error messages
+  - spec test as exercise; this is not the final version
+  - checks if errors exists
+  - leverage **count**, **any?** (somplement of **empty?**) methods
+    - work on objs, arrays, strings
+  - also use text helper **pluralize** (not available by default in console)
+    - takes an int and some string
+    - will pluralize string using underlying *inflector*
+- add styling to **custom.css.scss**
+  - uses SASS **@extend** to include functionality of two bootstrap classes
+
+
+## 7.4 | Signup success
+- if save is successful, route to user profile with message
+
+### 7.4.1 | The finished signup form
+- tests fail b/c there is no template for the **create** action (and we wont make one)
+- will use **redirect_to @user** for signup sucess
+  - test should be passing
+- add flash to greet new user
+  
+### 7.4.2 | The flash
+- flash will show when user successfully signs up
+  - disappears on page reload or when visiting any subsequent page
+- Rails has special variable *flash* which can be treated like a hash
+- add it to application layout
+  - iterate through each entry in flash hash
+  - use key to set div class
+  - use value to set flash message
+- notes that keys are symboles, but erb converts to string automatically
+- set flash in user controller, **create** action
+- flash is NOT time senstive (no timeout)
+
+### 7.4.3 | The first signup
+- create user with name 'Rails Tutorial' and email 'example@railstutorial.org'
+  - should route to user page
+  - should see success flash
+- verify via rails console `User.find_by(email: 'example@railstutorial.org')`
+
+### 7.4.4 | Deploying to production with SSL
+- make sure Heroku is set up (see ch 3)
+- will use Secure Sockets Layer (SSL), which is technically Transport Layer Security (TLS)
+- ensures that signup is secure and immune to *session hijacking*
+- merge changes to master branch
+
+
+
+
+
+
+
+
 
 
 
