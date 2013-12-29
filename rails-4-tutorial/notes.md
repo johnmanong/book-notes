@@ -296,7 +296,14 @@
 - ch 8 will tackle sign in/out
 - ch 9 and beyond fill in REST for user model, info update and security
 
+## 7.6 | Exercises
+1)
 
+2)
+
+3)
+
+4)
 
 
 
