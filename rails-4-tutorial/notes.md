@@ -8,310 +8,16 @@
 # working chapter #############################################################################
 
 
-# Chapter 7 | Sign up #############################################################################
+# Chapter 8 | Sign in, Sign out #############################################################################
 
 #### Topics:
-- showing users
-  - gravatar
-- signup form
-- sign up failure
-- signup success
 
 #### References:
-- Railscast for custom Rails environments: http://railscasts.com/episodes/72-adding-an-environment
-- Factory Girl: http://github.com/thoughtbot/factory_girl
-- Gravatar: http://gravatar.com/
-- CarrierWave: https://github.com/jnicklas/carrierwave
-- Paperclip: https://github.com/thoughtbot/paperclip
-- MD5 hash: http://en.wikipedia.org/wiki/MD5
-- CSRF attack: http://stackoverflow.com/questions/941594/understand-rails-authenticity-token
-- SSL/TLS: http://en.wikipedia.org/wiki/Transport_Layer_Security
-- SSL endpoints: https://devcenter.heroku.com/articles/ssl-endpoint
-
-#############################################################################
-
-
-- user will signup via HTML *form submit*
-- once user successfully signs up, show profile page (show user)
-  - first step in REST arch for users
-- to make profile page, we need a user in db (chicken and egg), but we added one via console in previous chapter
-- create new branch
-
-    $ git checkout -b sign-up
-
-## 7.1 | Showing users
-- end goal is to show user profile
-  - profile picture
-  - basic user data
-  - list of microposts
-  - number following
-  - number of followers
-
-### 7.1.1 | Debug and Rails environments
-- using conditional check on environment and *debug* method, print params in **application.html.erb**
-  - only render when in development env
-  - this is a default Rails env, can add more
-  - also add basic styling to **custom.css.scss**
-  - this styling will include a mixin for box sizing
-- *debug* method prints useful info (controller, action, ...) in YAML format
-- Rails environments
-  - 3 default environments: *test*, *development*, *production*
-  - Rails provides **Rails** object with *env* attributes, which has boolean methods to check env
-    - e.g. `Rails.env.test?`, `Rails.env.development?`, `Rails.env.production?`
-  - to run console in another env, pass it as an arg
-    - e.g. `$ rails console test`
-  - to start rails server in another env, pass '--environment' flag along with env
-    - e.g. `$ rails server --environment production`
-  - to run rake commands in another env, need to set the **RAILS_ENV** var
-    - e.g. `$ bundle exec rake db:migrate RAILS_ENV=production`
-  - these three different ways to specify env are not interchangable
-  - env info is also available in heroku console (which should be production)
-
-### 7.1.2 | A user resource
-- will represent User data as *resources* (REST) which can be created, shown, updated, and destroyed
-- REST
-  - data as resources
-
-  | action     | http method |
-  |------------| ------------|
-  | create     | POST        |
-  | show       | GET         |
-  | update     | PATCH/POST  |
-  | destroy    | DELETE      |
-
-  - resources are referred to by resource name and unique identifier
-- for users, User is the resource, and the id is the identifier
-  - e.g. url for user with id=1: `.../users/1`
-  - right now, get a routing error
-- when Rail's REST features are active, GET requests are routed to **show** action
-- to get REST style URLs to work, declare resources in **config/routes.rb**;
-
-  SampleApp::Application.routes.draw do
-    resources :users
-    root  'static_pages#home'
-    ...
-
-- this adds all RESTful urls for users resource
-  - Table 7.1 has all mappings
-- now error for missing 'show' action in controller
-- add new view at 'app/views/users/show.html.erb' and fill in to display user name and email
-  - assume existence of user instance variable
-- define show action in users_controller
-  - define @user
-  - use **User.find** method, passing in the id to get the user from the databse
-  - getting id from params hash returns string (always), **find** converts to int
-  - view should render now
-  - will throw error if no user exists with that id
-
-### 7.1.3 | Testing the show user page
-- using integration tests for pages associated with Users resource
-- update 'spec/user_pages_spec.rb'
-  - add spec test for profile page
-  - use *user_path* named route, passing it a User model object
-  - write basic test for user name in content and title
-- could use ActiveRecord **User.create** to create our model object, but factories are more convenient
-- add *Factory Girl* gem to project, in **:test** group: `gem 'factory_girl_rails', '4.2.1'`
-  - TODO check version
-- Factory Girl (from thoughtbot)
-  - defines DSL
-  - specialized for defining ActiveRecord objects
-  - syntax: Ruby blocks and custom methods
-  - advanced features will be leveraged in later chapters
-- all factories in **spec/factories.rb** (auto loaded by rspec)
-  - add code for User factory
-  - passing ':user' symbol tells FactoryGirl definition for User model object
-- all specs should be green (may need to bounce spork)
-- notice that specs are slow
-  - not Factory Girl's fault!
-  - bcrypt is slow, which makes it harder to attack
-  - this tradeoff between speed and security is ideal in production, but not testing
-  - update **config/environments/test.rb** to change *cost factor*
-    - this will increase speed, but reduce security (only in test env)
-
-### 7.1.4 | A Gravatar image and a sidebar
-- for view development, less focus on structure/testing
-- will resume TDD for pagination
-- start with adding Globally Recongnizatble Avatar (Gravatar)
-  - free service to associate info + image with email address/account
-  - this way we do not have to manage our own images
-  - resources if you need to manage images
-    - CarrierWave (https://github.com/jnicklas/carrierwave)
-    - Paperclip (https://github.com/thoughtbot/paperclip)
-- define helper function **gravatar_for** which takes a user and returns a Gravatar image
-  - add line to view (tests fail due to template error)
-- create file for helpers associated with **user_controller**
-- Gravatar URLs are based on a MD5 hash of the user's email
-  - implemented by **hexdigest** method in the **Digest** library
-  - e.g. `Digest::MD5::hexdigest("some.email@inter.net".downcase)`
-  - NOT case insensitive, like email
-- define helper method **gravatar_for** in **app/helpers/users_helper.rb**
-  - construct url using user email and MD5 hash
-  - generate image tag with url with class "gravatar"
-  - specs should pass
-  - TODO verify it works (no internet access atm)
-- default Gravatar image is shown when email does not map to a valid email
-- set example user to 'example@railsturtorial.com' for a valid example account (Rails logo!)
-  - will use *aside* HTML element along with Bootstrap classes *row* and *span4* for sidebar
-  - update **app/views/users/show.html.erb**
-- update **custom.css.scss** for Gravatar and sidebar styling
-
-
-## 7.2 | Signup form
-- goal of this section is to create a sign up page with four fields: name, email, pw, and pwconf
-- clean/reset database
-  - remove data: `bundle exec db:reset`
-  - prepare db: `bundle exec test:prepare`
-  - bounce local server
-
-### 7.2.1 | Test for user signup
-- use rspec and capybara to verify valid and invalid input to the signup form
-- can enter test into input fields with **fill_in** method
-- can click butons with **click_button** method
-- to verify valid and invalid input during tests, use ActiveRecord's **count** method
-  - e.g. `User.count`  => 0
-  - when invalid info is submitted, count should not change
-  - when valid info is subimttied, count +1
-  - **change** method used to calc count before/after execution of *expects* body
-- in Rspec, **eq** = equals
-- remember to factor out common code into memorized local (submit button)
-- put code run in every case in *before* block
-- at this point, fails due to lack of submit button
-- to get these basic tests to pass:
-  - create expected elements on page
-  - route submit button to correct endpoint
-  - create user in db, only if data is valid
-
-### 7.2.2 | Using *form_for*
-- **form_for** is an ActiveRecord helper method which takes an ActiveRecord obj and creates a form from it's attributes
-- in Rails 2.x and before, used `<% form_for ... %>`; later versions use `<%= form_for ... %>`
-- form_for
-  - takes a block with one variable
-  - uses variable to call methods to generate HTML form elements (text_input, label, radio button, submit, password field)
-  - generate code to set attr of obj passed in
-  - symbol passed to these methods correspond to attributes of the Active Record obj
-- currently page breaks and tests fail since **@user** is nil
-  - rspec: can pass '-e' flag which takes string and matches test with matching description string
-  - (?) claims this is different than substring matching, but cannot reproduce
-- to fix, we need to create a new User obj in the **user** controller, **new** action
-  - e.g. `@user = User.new`
-  - some specs still fail since *subit* does not map to an action
-- update styling in **custom.css.scss**
-
-### 7.2.3 | The form HTML
-- ids of HTML input elements are "#{obj}_#{attr}"
-- Rails generates auth token to prevent *cross-site request forgery (CSRF)*
-- **text_field** generates input element with type "text"
-- **password_field** generates input element with type "password"
-- **label** generates label element with ref to input(?)
-- **name** field is set on each HTML element, which allows RAILS to construct the hash
-- *form* tag is also generated, Rails populates with info about class, URL, an id, and a HTTP method
-- form and tests are still broken since user **create** method is not defined
-
-
-## 7.3 | Signup failure
-- in this section, update form to accept invalid input, re-render page with list of errors
-
-### 7.3.1 | A working form
-- RESTful routing provided by `resources :users` maps *POST* requests to '/users' to **create** action
-- **create** action should create new User obj with **User.new** and save to db
-  - this section is concerned with implementing the failure to save and re-rendering page
-  - use result of **@user.save** to switch success/failure
-- now clicking the submit button doesn't work, but we can get some useful information about what is submitted
-  - params for this request is a hash of hashes
-  - keys within the *user* hash correspond to the names of the input tags
-- hash keys are passed to Users controller as symbols
-  - **params[:user]** is the hash of attrs we need for **User.new**
-  - worked in the past but was error prone and insecure by default
-  - as of Rails 4, this no longer works
-
-### 7.3.2 | Strong parameters
-- mass assignment as mentioned is convenient, but is dangerous and insecure since all user input is passed
-- previous versions of Rails used a method **attr_accessible** in the model layer to solve this
-- in Rails 4, preferred method is *strong parameters* in the controller layer
-  - allows us to specify which parameters are *required* and which are *permitted*
-- default behaviour does not allow mass assignment, so more secure by default
-- restrictures on params
-  - require: user
-  - permit: name, email, password, password_confirmation
-  - add private helper to access params (convention)
-  - pass output of this helper to **User.new**
-- only 1 spec failture! (since we cannot successfully save a user)
-
-### 7.3.3 | Signup error messages
-- Rails provides error messages based on model validations
-  - **obj.errors.full_messages** contains array of all error messages
-- add a partial to be rendered when there are error messages
-  - spec test as exercise; this is not the final version
-  - checks if errors exists
-  - leverage **count**, **any?** (somplement of **empty?**) methods
-    - work on objs, arrays, strings
-  - also use text helper **pluralize** (not available by default in console)
-    - takes an int and some string
-    - will pluralize string using underlying *inflector*
-- add styling to **custom.css.scss**
-  - uses SASS **@extend** to include functionality of two bootstrap classes
-
-
-## 7.4 | Signup success
-- if save is successful, route to user profile with message
-
-### 7.4.1 | The finished signup form
-- tests fail b/c there is no template for the **create** action (and we wont make one)
-- will use **redirect_to @user** for signup sucess
-  - test should be passing
-- add flash to greet new user
-  
-### 7.4.2 | The flash
-- flash will show when user successfully signs up
-  - disappears on page reload or when visiting any subsequent page
-- Rails has special variable *flash* which can be treated like a hash
-- add it to application layout
-  - iterate through each entry in flash hash
-  - use key to set div class
-  - use value to set flash message
-- notes that keys are symboles, but erb converts to string automatically
-- set flash in user controller, **create** action
-- flash is NOT time senstive (no timeout)
-
-### 7.4.3 | The first signup
-- create user with name 'Rails Tutorial' and email 'example@railstutorial.org'
-  - should route to user page
-  - should see success flash
-- verify via rails console `User.find_by(email: 'example@railstutorial.org')`
-
-### 7.4.4 | Deploying to production with SSL
-- make sure Heroku is set up (see ch 3)
-- will use Secure Sockets Layer (SSL), which is technically Transport Layer Security (TLS)
-- ensures that signup is secure and immune to *session hijacking*
-- merge changes to master branch
-- add line to production.rb to force SSL in this env
-- push to heroku: `git push heroku master`
-- run migration on heroku: `heroku run rake db:migrate`
-- if we were building our own site (say example.com), we would need to purchse ssl cert
-- we can piggyback on heroku's!
-- wah hoo!
-
-## 7.5 | Conclusion
-- build basics for user signup
-- ch 8 will tackle sign in/out
-- ch 9 and beyond fill in REST for user model, info update and security
-
-## 7.6 | Exercises
-1)
-
-2)
-
-3)
-
-4)
-
 
 
 
 
 #############################################################################
-
-
 
 
 
@@ -1293,13 +999,300 @@ $ bundle exec rake db:migrate
 
 
 
-
-
-# Chapter 8 | Sign in, Sign out #############################################################################
+# Chapter 7 | Sign up #############################################################################
 
 #### Topics:
+- showing users
+  - gravatar
+- signup form
+- sign up failure
+- signup success
 
 #### References:
+- Railscast for custom Rails environments: http://railscasts.com/episodes/72-adding-an-environment
+- Factory Girl: http://github.com/thoughtbot/factory_girl
+- Gravatar: http://gravatar.com/
+- CarrierWave: https://github.com/jnicklas/carrierwave
+- Paperclip: https://github.com/thoughtbot/paperclip
+- MD5 hash: http://en.wikipedia.org/wiki/MD5
+- CSRF attack: http://stackoverflow.com/questions/941594/understand-rails-authenticity-token
+- SSL/TLS: http://en.wikipedia.org/wiki/Transport_Layer_Security
+- SSL endpoints: https://devcenter.heroku.com/articles/ssl-endpoint
+
+#############################################################################
+
+
+- user will signup via HTML *form submit*
+- once user successfully signs up, show profile page (show user)
+  - first step in REST arch for users
+- to make profile page, we need a user in db (chicken and egg), but we added one via console in previous chapter
+- create new branch
+
+    $ git checkout -b sign-up
+
+## 7.1 | Showing users
+- end goal is to show user profile
+  - profile picture
+  - basic user data
+  - list of microposts
+  - number following
+  - number of followers
+
+### 7.1.1 | Debug and Rails environments
+- using conditional check on environment and *debug* method, print params in **application.html.erb**
+  - only render when in development env
+  - this is a default Rails env, can add more
+  - also add basic styling to **custom.css.scss**
+  - this styling will include a mixin for box sizing
+- *debug* method prints useful info (controller, action, ...) in YAML format
+- Rails environments
+  - 3 default environments: *test*, *development*, *production*
+  - Rails provides **Rails** object with *env* attributes, which has boolean methods to check env
+    - e.g. `Rails.env.test?`, `Rails.env.development?`, `Rails.env.production?`
+  - to run console in another env, pass it as an arg
+    - e.g. `$ rails console test`
+  - to start rails server in another env, pass '--environment' flag along with env
+    - e.g. `$ rails server --environment production`
+  - to run rake commands in another env, need to set the **RAILS_ENV** var
+    - e.g. `$ bundle exec rake db:migrate RAILS_ENV=production`
+  - these three different ways to specify env are not interchangable
+  - env info is also available in heroku console (which should be production)
+
+### 7.1.2 | A user resource
+- will represent User data as *resources* (REST) which can be created, shown, updated, and destroyed
+- REST
+  - data as resources
+
+  | action     | http method |
+  |------------| ------------|
+  | create     | POST        |
+  | show       | GET         |
+  | update     | PATCH/POST  |
+  | destroy    | DELETE      |
+
+  - resources are referred to by resource name and unique identifier
+- for users, User is the resource, and the id is the identifier
+  - e.g. url for user with id=1: `.../users/1`
+  - right now, get a routing error
+- when Rail's REST features are active, GET requests are routed to **show** action
+- to get REST style URLs to work, declare resources in **config/routes.rb**;
+
+  SampleApp::Application.routes.draw do
+    resources :users
+    root  'static_pages#home'
+    ...
+
+- this adds all RESTful urls for users resource
+  - Table 7.1 has all mappings
+- now error for missing 'show' action in controller
+- add new view at 'app/views/users/show.html.erb' and fill in to display user name and email
+  - assume existence of user instance variable
+- define show action in users_controller
+  - define @user
+  - use **User.find** method, passing in the id to get the user from the databse
+  - getting id from params hash returns string (always), **find** converts to int
+  - view should render now
+  - will throw error if no user exists with that id
+
+### 7.1.3 | Testing the show user page
+- using integration tests for pages associated with Users resource
+- update 'spec/user_pages_spec.rb'
+  - add spec test for profile page
+  - use *user_path* named route, passing it a User model object
+  - write basic test for user name in content and title
+- could use ActiveRecord **User.create** to create our model object, but factories are more convenient
+- add *Factory Girl* gem to project, in **:test** group: `gem 'factory_girl_rails', '4.2.1'`
+  - TODO check version
+- Factory Girl (from thoughtbot)
+  - defines DSL
+  - specialized for defining ActiveRecord objects
+  - syntax: Ruby blocks and custom methods
+  - advanced features will be leveraged in later chapters
+- all factories in **spec/factories.rb** (auto loaded by rspec)
+  - add code for User factory
+  - passing ':user' symbol tells FactoryGirl definition for User model object
+- all specs should be green (may need to bounce spork)
+- notice that specs are slow
+  - not Factory Girl's fault!
+  - bcrypt is slow, which makes it harder to attack
+  - this tradeoff between speed and security is ideal in production, but not testing
+  - update **config/environments/test.rb** to change *cost factor*
+    - this will increase speed, but reduce security (only in test env)
+
+### 7.1.4 | A Gravatar image and a sidebar
+- for view development, less focus on structure/testing
+- will resume TDD for pagination
+- start with adding Globally Recongnizatble Avatar (Gravatar)
+  - free service to associate info + image with email address/account
+  - this way we do not have to manage our own images
+  - resources if you need to manage images
+    - CarrierWave (https://github.com/jnicklas/carrierwave)
+    - Paperclip (https://github.com/thoughtbot/paperclip)
+- define helper function **gravatar_for** which takes a user and returns a Gravatar image
+  - add line to view (tests fail due to template error)
+- create file for helpers associated with **user_controller**
+- Gravatar URLs are based on a MD5 hash of the user's email
+  - implemented by **hexdigest** method in the **Digest** library
+  - e.g. `Digest::MD5::hexdigest("some.email@inter.net".downcase)`
+  - NOT case insensitive, like email
+- define helper method **gravatar_for** in **app/helpers/users_helper.rb**
+  - construct url using user email and MD5 hash
+  - generate image tag with url with class "gravatar"
+  - specs should pass
+  - TODO verify it works (no internet access atm)
+- default Gravatar image is shown when email does not map to a valid email
+- set example user to 'example@railsturtorial.com' for a valid example account (Rails logo!)
+  - will use *aside* HTML element along with Bootstrap classes *row* and *span4* for sidebar
+  - update **app/views/users/show.html.erb**
+- update **custom.css.scss** for Gravatar and sidebar styling
+
+
+## 7.2 | Signup form
+- goal of this section is to create a sign up page with four fields: name, email, pw, and pwconf
+- clean/reset database
+  - remove data: `bundle exec db:reset`
+  - prepare db: `bundle exec test:prepare`
+  - bounce local server
+
+### 7.2.1 | Test for user signup
+- use rspec and capybara to verify valid and invalid input to the signup form
+- can enter test into input fields with **fill_in** method
+- can click butons with **click_button** method
+- to verify valid and invalid input during tests, use ActiveRecord's **count** method
+  - e.g. `User.count`  => 0
+  - when invalid info is submitted, count should not change
+  - when valid info is subimttied, count +1
+  - **change** method used to calc count before/after execution of *expects* body
+- in Rspec, **eq** = equals
+- remember to factor out common code into memorized local (submit button)
+- put code run in every case in *before* block
+- at this point, fails due to lack of submit button
+- to get these basic tests to pass:
+  - create expected elements on page
+  - route submit button to correct endpoint
+  - create user in db, only if data is valid
+
+### 7.2.2 | Using *form_for*
+- **form_for** is an ActiveRecord helper method which takes an ActiveRecord obj and creates a form from it's attributes
+- in Rails 2.x and before, used `<% form_for ... %>`; later versions use `<%= form_for ... %>`
+- form_for
+  - takes a block with one variable
+  - uses variable to call methods to generate HTML form elements (text_input, label, radio button, submit, password field)
+  - generate code to set attr of obj passed in
+  - symbol passed to these methods correspond to attributes of the Active Record obj
+- currently page breaks and tests fail since **@user** is nil
+  - rspec: can pass '-e' flag which takes string and matches test with matching description string
+  - (?) claims this is different than substring matching, but cannot reproduce
+- to fix, we need to create a new User obj in the **user** controller, **new** action
+  - e.g. `@user = User.new`
+  - some specs still fail since *subit* does not map to an action
+- update styling in **custom.css.scss**
+
+### 7.2.3 | The form HTML
+- ids of HTML input elements are "#{obj}_#{attr}"
+- Rails generates auth token to prevent *cross-site request forgery (CSRF)*
+- **text_field** generates input element with type "text"
+- **password_field** generates input element with type "password"
+- **label** generates label element with ref to input(?)
+- **name** field is set on each HTML element, which allows RAILS to construct the hash
+- *form* tag is also generated, Rails populates with info about class, URL, an id, and a HTTP method
+- form and tests are still broken since user **create** method is not defined
+
+
+## 7.3 | Signup failure
+- in this section, update form to accept invalid input, re-render page with list of errors
+
+### 7.3.1 | A working form
+- RESTful routing provided by `resources :users` maps *POST* requests to '/users' to **create** action
+- **create** action should create new User obj with **User.new** and save to db
+  - this section is concerned with implementing the failure to save and re-rendering page
+  - use result of **@user.save** to switch success/failure
+- now clicking the submit button doesn't work, but we can get some useful information about what is submitted
+  - params for this request is a hash of hashes
+  - keys within the *user* hash correspond to the names of the input tags
+- hash keys are passed to Users controller as symbols
+  - **params[:user]** is the hash of attrs we need for **User.new**
+  - worked in the past but was error prone and insecure by default
+  - as of Rails 4, this no longer works
+
+### 7.3.2 | Strong parameters
+- mass assignment as mentioned is convenient, but is dangerous and insecure since all user input is passed
+- previous versions of Rails used a method **attr_accessible** in the model layer to solve this
+- in Rails 4, preferred method is *strong parameters* in the controller layer
+  - allows us to specify which parameters are *required* and which are *permitted*
+- default behaviour does not allow mass assignment, so more secure by default
+- restrictures on params
+  - require: user
+  - permit: name, email, password, password_confirmation
+  - add private helper to access params (convention)
+  - pass output of this helper to **User.new**
+- only 1 spec failture! (since we cannot successfully save a user)
+
+### 7.3.3 | Signup error messages
+- Rails provides error messages based on model validations
+  - **obj.errors.full_messages** contains array of all error messages
+- add a partial to be rendered when there are error messages
+  - spec test as exercise; this is not the final version
+  - checks if errors exists
+  - leverage **count**, **any?** (somplement of **empty?**) methods
+    - work on objs, arrays, strings
+  - also use text helper **pluralize** (not available by default in console)
+    - takes an int and some string
+    - will pluralize string using underlying *inflector*
+- add styling to **custom.css.scss**
+  - uses SASS **@extend** to include functionality of two bootstrap classes
+
+
+## 7.4 | Signup success
+- if save is successful, route to user profile with message
+
+### 7.4.1 | The finished signup form
+- tests fail b/c there is no template for the **create** action (and we wont make one)
+- will use **redirect_to @user** for signup sucess
+  - test should be passing
+- add flash to greet new user
+
+### 7.4.2 | The flash
+- flash will show when user successfully signs up
+  - disappears on page reload or when visiting any subsequent page
+- Rails has special variable *flash* which can be treated like a hash
+- add it to application layout
+  - iterate through each entry in flash hash
+  - use key to set div class
+  - use value to set flash message
+- notes that keys are symboles, but erb converts to string automatically
+- set flash in user controller, **create** action
+- flash is NOT time senstive (no timeout)
+
+### 7.4.3 | The first signup
+- create user with name 'Rails Tutorial' and email 'example@railstutorial.org'
+  - should route to user page
+  - should see success flash
+- verify via rails console `User.find_by(email: 'example@railstutorial.org')`
+
+### 7.4.4 | Deploying to production with SSL
+- make sure Heroku is set up (see ch 3)
+- will use Secure Sockets Layer (SSL), which is technically Transport Layer Security (TLS)
+- ensures that signup is secure and immune to *session hijacking*
+- merge changes to master branch
+- add line to production.rb to force SSL in this env
+- push to heroku: `git push heroku master`
+- run migration on heroku: `heroku run rake db:migrate`
+- if we were building our own site (say example.com), we would need to purchse ssl cert
+- we can piggyback on heroku's!
+- wah hoo!
+
+## 7.5 | Conclusion
+- build basics for user signup
+- ch 8 will tackle sign in/out
+- ch 9 and beyond fill in REST for user model, info update and security
+
+## 7.6 | Exercises
+1) add optional size param to **gravatar_for** helper
+2) Write test to check that correct page is loaded, correct number of errors are shown, and flash is present (count 2)
+3) verify tests for testing user creation
+4) user **content_tag** to clean up flash code and verify tests still work
+
 
 
 
