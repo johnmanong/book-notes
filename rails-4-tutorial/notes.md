@@ -15,6 +15,61 @@
 #### References:
 
 
+- change layout based on signin status
+- restrict access to pages based on identity
+- investigate cucumber for Behavior Driven Development (BDD)
+- create new branch `$ git checkout -b ch8-sign-in-out`
+
+## 8.1 | Sessions and signin failure
+- a *session* is a semi-permanent connection between two computers
+- we will use sessions for handling *signing-in*
+  - forgetting session on browswer close
+  - providing checkbox for persistent sessions
+  - remembering sessions until user signs out
+  - * also common to expire after some timeout; not used here
+- model sessions as a restful resource
+  - sign-in = create
+  - sign-out = destroy
+  - will use *cookies* instead of db
+- in this section
+  - sessions controller + actions
+  - signin form
+
+### 8.1.1 | Sessions controller
+- handled by new action
+- send **POST** request to create action
+- send **DELETE** request destroy action
+- to generate session controller and integration test
+
+    $ rails generate controller Sessions --no-test-framework
+    $ rails generate integration_test authentication_pages
+
+- signin page at **signin_path**
+- start with minimal spec for auth page
+- add **resources** to route file (only new, create, destroy) and matching routes
+
+    resources :sessions, only: [:new, :create, :destroy]
+    match '/signin',  to: 'sessions#new',           via: 'get'
+    match '/signout', to: 'sessions#destory',       via: 'delete'
+
+- **via: 'delete'** should be invoked via HTTP delete
+
+  | HTTP Method | URL         | Named Route    | Action   | Purpose              |
+  |------------ | ------------|----------------|----------|----------------------|
+  | GET         | /signin     | signin_path    | new      | page for new session |
+  | POST        | /sessions   | sessions_path  | create   | create new session   |
+  | DELETE      | /signout    | signout_path   | destroy  | delete session       |
+
+- to see all routes, run **rake routes**
+- update controller with aforementioned actions
+- create signing page **app/views/sessions/new.html.erb**
+- NOTE: test for title is case senstive, test for content is not
+
+### 8.1.2 | Signin tests
+
+
+
+
 
 
 #############################################################################
