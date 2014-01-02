@@ -66,7 +66,28 @@
 - NOTE: test for title is case senstive, test for content is not
 
 ### 8.1.2 | Signin tests
+- similar to signup form, except only two fields
+- when signin is invalid, rerender a signin page and flash error
+- Capybara 2.0, **have_selector** only selects visible HTML elements
+- add spec test for click sign in button with invalide (none) information
+- to test for successful signin, we'll check
+  - title (which should reflect user's name)
+  - changes to navigation
+    - a link to profile page
+    - a sign out link
+    - lack of sign in link
+- defer testing 'Settings' and 'Users' until ch 9
+- write tests for valid info
+  - **have_link** which matches text and href
+  - use upcase on email to ensure match
 
+### 8.1.3 | Signin form
+- will use **form_for** again
+- no Session model, so wont be exactly the same as User signup
+- Rails can refer to **action** of the form
+  - need to give name of resouce and url to point to
+- could also use **form_tag** instead of **form_for**, but not common in signin pages
+- generated form HTML very similary to signup form
 
 
 
