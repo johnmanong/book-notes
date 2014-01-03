@@ -89,6 +89,31 @@
 - could also use **form_tag** instead of **form_for**, but not common in signin pages
 - generated form HTML very similary to signup form
 
+### 8.1.4 | Reviewing from submission
+- params has *session* which is a hash containing submitted *email* and *password*
+- populate **create** action in the sessions controller to find user by email and auth pw
+  - recall email is save in downcase for case insentivity
+  - **authenticate** method (provided by **has_secture_password**) returns false if incorrect pw
+  - check for existence of user and auth pw (common pattern)
+    - auth only checked if user is anything but *nil* or *false*
+
+### 8.1.5 | Rendering with flash message
+- cannot use same technique to render flash messages, bc session is not an Active Record object
+- naaive approach is to assign value to flash obj in controller, weird results
+  - flash persists for one request
+  - render does not count as a request, like redirect
+  - therefore, flash will persist for one request longer than we want
+  - e.g. submit bad info, then go to homepage; flash persists!
+- add test to catch this
+  - add nested test which will click home link, and check again for the flash
+- will use **flash.now** instead of **flash**
+  - used for displaying flash on rendered pages
+  - disappears on additional request
+- tests are now green, wahh hoo
+
+## 8.2 | Signin success
+
+
 
 
 
