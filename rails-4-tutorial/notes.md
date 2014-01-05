@@ -112,6 +112,70 @@
 - tests are now green, wahh hoo
 
 ## 8.2 | Signin success
+- most ruby intensive section
+- fill out create action in sessions controller
+  - **sign_in** function (helper to implemenet)
+  - redirect to user profile page
+
+### 8.2.1 | Remember me
+- will remember session forever and only sign out user when user expliclty does so
+- signin functions will cross MVC lines
+- could write new class, but Ruby provides modules so we will use *SessionsHelper* module instead
+  - this module is available in the views rendered by Sessions controller
+  - not available in controllers
+    - add include to application controller: `include SessionHelper`
+- HTTP is stateless, therefore web app must track user progress from page to page
+- Rails has build in **session** function which is used to store *remember_token*
+  - setting this token to user id make its available to each page
+  - stores in browswer cookie, expires on browser close
+  - secures sessions since spoofed ids wont match rememebred token
+- we want sessions to persists even after browswer close
+- need a permantent way to id signed in user
+- will generate remember token for each user
+  - store as permanent cookie which does not expire on broswer close
+- since remember token is associated with the user, add it to the User model
+  - remember, tests first!
+  - generate migration: `rails generate migration add_remember_token_to_users`
+  - fill in migration with string col for token and index (since we will look up users with it)
+  - does not have to be unique?
+  - update the database!
+- specs are green
+- what will the remember token be?
+  - large random string which is unique
+  - will use **urlsafe_base64** method from **SecureRandom** module in Ruby std lib
+    - will return string of 16 chars
+    - can be chars, digits, dash, and underscore
+    - prob of collision low: 1/(64^16) = 10^-29
+  - will store this in browser and an encrypted version in the database
+- will get cookie from browser, encrypt, and search for user
+- encrypt in db is good, if compromised, cannot be used to sign in
+- will change this every time a new session is started
+  - mitigate affects of *session hijacking*
+  - site wide SSL so that tokens are not visible over public wifi
+- will use a *callback* in the context of email uniqueness to verify that every user has a valid token
+  - will use **before_create** to create token for newly created users
+- to tests, save a test user for the first time and check that token is not blank
+  - this test will intro **its** which looks at the given attribute and not the subject
+- add **before_create** filter to user.rb
+  - pass it a *method reference* instead of a block, like we did in **before_save**
+  - define private method **create_remember_token**
+  - method will assign an attr of user using **self**, which referes to user's remember_token
+  - also create methods to create and encrypt token
+- private methods are hidden from the interface: `User.private_method` doesn't work
+  - 'to_s' is to handle the nil case (might happen in tests, but shouldn't happen in browser)
+- using SHA1 hashing algo to encrypt
+  - much faster then bcrypt
+  - speed is important bc this will be run on each page
+  - less secure than bcrypt
+  - encryption of a 16 char random string essentially uncrackable
+- **encrypt** and **new_remember_token** are attached to the **User** class
+  - this way they do not need an instance of **User** class to be called
+    - aka class method, since it needs no instance
+  - declared public so they can be used outside of the User class
+- user_spec.rb should now be passing
+  - NOTE: encrypt method will return hash for nil and ''!
+
+8.2.2 | A working sign_in method
 
 
 
