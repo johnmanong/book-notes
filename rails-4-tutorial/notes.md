@@ -176,9 +176,66 @@
   - NOTE: encrypt method will return hash for nil and ''!
 
 8.2.2 | A working sign_in method
+- steps for sign_in method
 
+1) create new token
+2) place unencrypted cookie in browser using Rails **cookies** utility
+3) save encrypted cookie in database using **update_attribute**
+4) set *current_user* to *user*
 
+- step 4) isn't necessary due to redirect from **create** action, however not good to rely on this
+- **update_attribute** allows update of single attribute while bypassing valdation
+  - in our case, we would need the password and confirmation to pass validation
+- **cookies** Rails utility allows manipulation of browser cookies as if they were hashes
+  - are not hashes, it's an abstraction
+  - each element takes a hash of two elements
+    - **value** of the cookie
+    - **expires** date (optional)
+  - has **permanent** method which sets **expires** to 20 years
+- intro to *Rails time helpers* on fixnum
+  - creates useful strings from semantic method chains
+  - e.g. `1.year.from_now` prints the date a year ago
+- can now fetch users using remember token: `User.find_by(remember_token: remember_token)`
 
+8.2.3 | Current user
+- need a way to retrieve user on subsequent page views
+- **current_user** will be available in the controller and the view
+- define *assignment function** (special syntax)
+  - takes arg, user, which is right hand side of assignment
+  - sets user to instance variable @current_user, storing for later user
+- can also define a *getter*, but this is the same as **attr_accessor**, which defines setters/getters
+- this simple implementation will not persist @current_user between page views
+  - due to stateless nature of http interactions
+  - subsquent requests sets variables to defaults, such as @current_user = nil
+- use the **User.encrypt** method with the browser cookie to fetch the current user
+  - can memoize lookup using the *or equals* operator ( ||= )
+  - memoize is only effective if **current_user** is used more than once per page view
+- *or equals*
+  - if value on LHS is nil or false (falsey in Ruby), then assigns RHS
+  - else returns LHS
+  - shorthand for: `x = x || y`
+  - *or* evals from left to right, *shortcircuit evaluation*
+  - follows similar for as `x = x + y === x += y`
+
+### 8.2.4 | Changing the layout links
+- update the header to show "Sign in" when the user is not signed in and "Sign out" when signed in
+  - will also add Accounts menu with links to "Profile", "Settings" and "Sign out"
+- implement a **signed_in?** method
+  - checks if **current_user** is non-**nil**
+  - uses the "not" operator, **!** (bang)
+- Add links to dropdown using bookstrap dropdowns
+  - "Sign out" link to user HTTP DELETE, needs to be specified
+  - browsers cannot issues HTTP DELETE, Rails fakes it with js
+- "Profile" link uses **current_user** as path
+  - Rails allows us to refer to user
+  - auto converts **current_user** to **user_path(current_user)**
+- add Bootstrap js to **application.js**
+
+  `//=require bootstrap` in *application.js*
+
+- signed in user now sees 'Account' dropdown menu
+- verify we can signin, broswer has cookie for *remember_token*, and specs are green
+- signout does not work, since sessions controller does not have destroy
 
 
 
