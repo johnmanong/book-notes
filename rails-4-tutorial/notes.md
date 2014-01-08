@@ -11,9 +11,15 @@
 # Chapter 8 | Sign in, Sign out #############################################################################
 
 #### Topics:
+  - sessions
+  - sign in
+  - sign out
+  - cucumber
 
 #### References:
+- Gherkin: plain text language used by Cucumber [https://github.com/cucumber/gherkin]
 
+#############################################################################
 
 - change layout based on signin status
 - restrict access to pages based on identity
@@ -285,6 +291,47 @@
   - database_cleaner
 - run: `rails generate cucumber:install`
   - will create **features/** directory
+
+### 8.3.2 | Features and steps
+- tests in **features/** director with *.feature* extension
+- cucumber uses plain text language, Gherkin
+- tests are specified by:
+  - Features, which have ...
+    - Scenarios, which have ...
+      - Given statements : setup
+      - When statements : context
+      - Then statements : condition
+- Given, When and Then statements are plain text in test, but defined in *step files*
+  - map plain text to ruby code (capybara)
+  - **features/step_definitions**
+  - *.rb* files
+  - these are methods which takes regex and block
+    - regex matches text of statement in *.feature* file
+    - block is Rspec/Capycara code to execute
+- the Rspec code is very similary to our code from previous spec tests
+  - access to **page** object
+- run tests
+  - `bundle exec cucumber features`
+  - `bundle exec rake cucumber`
+  - `bundle exec rake cucumber:ok`
+
+### 8.3.3 | Counterpoint: Rspec custom matchers
+- case: integration tests vs. Cucumber
+- cucumber seperates concerns
+  - tests are seperate from code that implements them
+    - if implementation changes, tests can stay the same, only steps change
+  - this is both good and bad
+  - offers highest level of abstraction
+- cucumber: easy to read, harder to write
+- rspec: harder to read, easier to write
+- Rspec *custom matchers* and helper methods
+  - keeps code DRY
+  - seperate concerns like cucumber
+- add custom matcher for 'have_error_message' and to fill in valid user info
+  - define in same utilities file as **full_title_helper**
+    - note: **full_title** is actually defined in applicaiton helper which is included
+
+
 
 
 
