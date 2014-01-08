@@ -237,6 +237,56 @@
 - verify we can signin, broswer has cookie for *remember_token*, and specs are green
 - signout does not work, since sessions controller does not have destroy
 
+### 8.2.5 | Signin upon signup
+- current implementation, user is not signed in by default when signing up
+- add test to 'after user saved' to check for 'Sign out' link
+  - this is a side effect of signing in
+  - this check is also performed in *authentication_pages_spec.rb*
+- update **users_controller create** method
+  - if **@user.save** is true, call **sign_in** method passing it **@user**
+  - **sign_in** action is defined in **sessions_helper.rb**
+
+### 8.2.6 | Signing out
+- use RESTful convention to signing out
+  - sign in used **new** for the page and **create** to complete signin
+  - sign out will use **destroy** action to delete session
+- add test nested within sign in w/ valid info
+  - click 'Sign out' link
+  - verify that 'Sign in' link is now present
+  - optionally check that 'Sign out' link is gone (redundant if we assume mutual exclusion)
+- in destroy action
+  - sign user out by calling **sign_out**
+  - send user to home by calling **redirect_to root_url**
+- **sign_out** method
+  - defined in Sessions helper module
+  - change current user's token in db
+    - in case cookie was stolen, it is now invalid
+  - user **cookies.delete** to delete the **:remember_token** cookie
+  - unset the current user (assign to nil)
+    - this happens as a side effect of the **redirect** but it is not good to rely on this
+- all specs green
+  - important to not this does not test everything, i.e.
+    - how long "remember me" is set
+    - if cookie is set and deleted
+  - author notes that these kind of tests tend to rely on implementation which are brittle and can change
+  - these test for core functionality: sign in, stay on the page, sign out
+
+## 8.3 | Introduction to Cucumber
+- Behavior Driven Development (BDD) stlye testing framework
+- allows for plain text stories to define tests
+  - can be shared with non-tech people
+  - readabiliy
+  - can be verbose
+  - emphasis on high level behavior instead of low leve implementation
+
+### 8.3.1 | Installation and setup
+- install the following gems
+  - cucumber-rails
+  - database_cleaner
+- run: `rails generate cucumber:install`
+  - will create **features/** directory
+
+
 
 
 #############################################################################
