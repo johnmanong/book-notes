@@ -331,6 +331,14 @@
   - define in same utilities file as **full_title_helper**
     - note: **full_title** is actually defined in applicaiton helper which is included
 
+## 8.4 | Conclusion
+- implemented full suite of registration and login behaviors
+- next step to restrict access to pages based on user idenity and sign on status, ch 9
+- also in ch 9
+  - user to edit info
+  - admin to remove users
+- merge changes to back to master
+- push to Heroku
 
 
 
