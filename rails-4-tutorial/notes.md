@@ -340,6 +340,25 @@
 - merge changes to back to master
 - push to Heroku
 
+## 8.5 | Exercises
+1) refactor sign in form to use **form_tag** instead of **form_for**
+
+- http://railscasts.com/episodes/270-authentication-in-rails-3-1
+  - **http_basic_authenticate_with** :name => 'something', :password => 'something'
+- **form_for** is used when form is backed by specific model
+- **form_tag** creates basic form
+  - do not def tags based on form
+    - f.text_field -> text_field_tag
+  - params hash no longer has form object layer
+    - params[:session][:email] -> params[:email]
+
+2) refactor tests to leverage helper funcitons and rspec custom matchers, also refactor into different files
+
+- rpsec custom matchers must return one value?
+  - returns one value true/false
+  - how to combine multiple?
+  - cannot use negative 'not_to'? -> didn't work in case of signin/sing out
+
 
 
 
