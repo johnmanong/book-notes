@@ -12,13 +12,69 @@
 # Chapter 9 | title #############################################################################
 
 #### Topics:
+- updating users
+- authorization
+- showing all users
+- deleting users
+
 
 #### References:
 
+
 #############################################################################
 
+- update Users resource
+  - edit, update, index, destroy
+- enforce security model
+- sample data
+- pagniation
+- destory users
+- priviliged admins
 
+## 9.1 | Updating users
+- editing user follows similiar pattern to creating user (ch 7)
+  - **new** action to render view for new users -> **edit** action to render view
+  - **create** responds to POST request -> **update** responds to PATCH request
+- signed in user can only edit their own info
+  - need to intro access restriction
+  - will leverage auth infrastructure introduced in ch 8 and *before_filter*
 
+### 9.1.1 | Edit form
+- test for this page are analogous to those for sign in page
+  - create test user
+  - visit page
+  - test for correct page
+    - test for title
+    - test for content
+    - test for change link
+  - test invalid input
+    - click submit
+    - test for error content
+- fill out **edit** action in *Users* controller
+  - proper url is 'users/:id/edit'
+  - *id* is available in params hash: `params[:id]`
+  - find user by id and assign to instance variable
+- fill out the 'users/edit' view to get tests to pass
+  - reuse 'errors' partial
+  - form is same as /users/new
+  - passing **@user** to form, Rails prepopulates *name* and *email* fields
+- form generated HTML
+  - hidden input field with name **_method** and value **patch**
+  - broswers cannot submit PATCH request, as needed by REST
+  - broswer users POST request
+  - this is how Rails fakes it
+- form_for uses POST or PATCH depending if the record is new
+  - uses **new_record?** method to check if record is new
+  - true: uses POST to **create** new user
+  - false: uses PATCH to **update** existing user
+- add 'Settings' link to drop down menu
+  - add test to auth specs
+  - fill in header view
+- fill in **sign_in** helper method to sign in user with valid info
+  - provide option to manipulate cookie if not using capybara
+  - necessary when using HTTP requests (**get**,**post**,**patch**,**delete**) directly
+
+### 9.1.2 | Unsuccessful edits
 
 
 
