@@ -8,356 +8,15 @@
 # working chapter #############################################################################
 
 
-# Chapter 8 | Sign in, Sign out #############################################################################
+
+# Chapter 9 | title #############################################################################
 
 #### Topics:
-  - sessions
-  - sign in
-  - sign out
-  - cucumber
 
 #### References:
-- Gherkin: plain text language used by Cucumber [https://github.com/cucumber/gherkin]
 
 #############################################################################
 
-- change layout based on signin status
-- restrict access to pages based on identity
-- investigate cucumber for Behavior Driven Development (BDD)
-- create new branch `$ git checkout -b ch8-sign-in-out`
-
-## 8.1 | Sessions and signin failure
-- a *session* is a semi-permanent connection between two computers
-- we will use sessions for handling *signing-in*
-  - forgetting session on browswer close
-  - providing checkbox for persistent sessions
-  - remembering sessions until user signs out
-  - * also common to expire after some timeout; not used here
-- model sessions as a restful resource
-  - sign-in = create
-  - sign-out = destroy
-  - will use *cookies* instead of db
-- in this section
-  - sessions controller + actions
-  - signin form
-
-### 8.1.1 | Sessions controller
-- handled by new action
-- send **POST** request to create action
-- send **DELETE** request destroy action
-- to generate session controller and integration test
-
-    $ rails generate controller Sessions --no-test-framework
-    $ rails generate integration_test authentication_pages
-
-- signin page at **signin_path**
-- start with minimal spec for auth page
-- add **resources** to route file (only new, create, destroy) and matching routes
-
-    resources :sessions, only: [:new, :create, :destroy]
-    match '/signin',  to: 'sessions#new',           via: 'get'
-    match '/signout', to: 'sessions#destory',       via: 'delete'
-
-- **via: 'delete'** should be invoked via HTTP delete
-
-  | HTTP Method | URL         | Named Route    | Action   | Purpose              |
-  |------------ | ------------|----------------|----------|----------------------|
-  | GET         | /signin     | signin_path    | new      | page for new session |
-  | POST        | /sessions   | sessions_path  | create   | create new session   |
-  | DELETE      | /signout    | signout_path   | destroy  | delete session       |
-
-- to see all routes, run **rake routes**
-- update controller with aforementioned actions
-- create signing page **app/views/sessions/new.html.erb**
-- NOTE: test for title is case senstive, test for content is not
-
-### 8.1.2 | Signin tests
-- similar to signup form, except only two fields
-- when signin is invalid, rerender a signin page and flash error
-- Capybara 2.0, **have_selector** only selects visible HTML elements
-- add spec test for click sign in button with invalide (none) information
-- to test for successful signin, we'll check
-  - title (which should reflect user's name)
-  - changes to navigation
-    - a link to profile page
-    - a sign out link
-    - lack of sign in link
-- defer testing 'Settings' and 'Users' until ch 9
-- write tests for valid info
-  - **have_link** which matches text and href
-  - use upcase on email to ensure match
-
-### 8.1.3 | Signin form
-- will use **form_for** again
-- no Session model, so wont be exactly the same as User signup
-- Rails can refer to **action** of the form
-  - need to give name of resouce and url to point to
-- could also use **form_tag** instead of **form_for**, but not common in signin pages
-- generated form HTML very similary to signup form
-
-### 8.1.4 | Reviewing from submission
-- params has *session* which is a hash containing submitted *email* and *password*
-- populate **create** action in the sessions controller to find user by email and auth pw
-  - recall email is save in downcase for case insentivity
-  - **authenticate** method (provided by **has_secture_password**) returns false if incorrect pw
-  - check for existence of user and auth pw (common pattern)
-    - auth only checked if user is anything but *nil* or *false*
-
-### 8.1.5 | Rendering with flash message
-- cannot use same technique to render flash messages, bc session is not an Active Record object
-- naaive approach is to assign value to flash obj in controller, weird results
-  - flash persists for one request
-  - render does not count as a request, like redirect
-  - therefore, flash will persist for one request longer than we want
-  - e.g. submit bad info, then go to homepage; flash persists!
-- add test to catch this
-  - add nested test which will click home link, and check again for the flash
-- will use **flash.now** instead of **flash**
-  - used for displaying flash on rendered pages
-  - disappears on additional request
-- tests are now green, wahh hoo
-
-## 8.2 | Signin success
-- most ruby intensive section
-- fill out create action in sessions controller
-  - **sign_in** function (helper to implemenet)
-  - redirect to user profile page
-
-### 8.2.1 | Remember me
-- will remember session forever and only sign out user when user expliclty does so
-- signin functions will cross MVC lines
-- could write new class, but Ruby provides modules so we will use *SessionsHelper* module instead
-  - this module is available in the views rendered by Sessions controller
-  - not available in controllers
-    - add include to application controller: `include SessionHelper`
-- HTTP is stateless, therefore web app must track user progress from page to page
-- Rails has build in **session** function which is used to store *remember_token*
-  - setting this token to user id make its available to each page
-  - stores in browswer cookie, expires on browser close
-  - secures sessions since spoofed ids wont match rememebred token
-- we want sessions to persists even after browswer close
-- need a permantent way to id signed in user
-- will generate remember token for each user
-  - store as permanent cookie which does not expire on broswer close
-- since remember token is associated with the user, add it to the User model
-  - remember, tests first!
-  - generate migration: `rails generate migration add_remember_token_to_users`
-  - fill in migration with string col for token and index (since we will look up users with it)
-  - does not have to be unique?
-  - update the database!
-- specs are green
-- what will the remember token be?
-  - large random string which is unique
-  - will use **urlsafe_base64** method from **SecureRandom** module in Ruby std lib
-    - will return string of 16 chars
-    - can be chars, digits, dash, and underscore
-    - prob of collision low: 1/(64^16) = 10^-29
-  - will store this in browser and an encrypted version in the database
-- will get cookie from browser, encrypt, and search for user
-- encrypt in db is good, if compromised, cannot be used to sign in
-- will change this every time a new session is started
-  - mitigate affects of *session hijacking*
-  - site wide SSL so that tokens are not visible over public wifi
-- will use a *callback* in the context of email uniqueness to verify that every user has a valid token
-  - will use **before_create** to create token for newly created users
-- to tests, save a test user for the first time and check that token is not blank
-  - this test will intro **its** which looks at the given attribute and not the subject
-- add **before_create** filter to user.rb
-  - pass it a *method reference* instead of a block, like we did in **before_save**
-  - define private method **create_remember_token**
-  - method will assign an attr of user using **self**, which referes to user's remember_token
-  - also create methods to create and encrypt token
-- private methods are hidden from the interface: `User.private_method` doesn't work
-  - 'to_s' is to handle the nil case (might happen in tests, but shouldn't happen in browser)
-- using SHA1 hashing algo to encrypt
-  - much faster then bcrypt
-  - speed is important bc this will be run on each page
-  - less secure than bcrypt
-  - encryption of a 16 char random string essentially uncrackable
-- **encrypt** and **new_remember_token** are attached to the **User** class
-  - this way they do not need an instance of **User** class to be called
-    - aka class method, since it needs no instance
-  - declared public so they can be used outside of the User class
-- user_spec.rb should now be passing
-  - NOTE: encrypt method will return hash for nil and ''!
-
-8.2.2 | A working sign_in method
-- steps for sign_in method
-
-1) create new token
-2) place unencrypted cookie in browser using Rails **cookies** utility
-3) save encrypted cookie in database using **update_attribute**
-4) set *current_user* to *user*
-
-- step 4) isn't necessary due to redirect from **create** action, however not good to rely on this
-- **update_attribute** allows update of single attribute while bypassing valdation
-  - in our case, we would need the password and confirmation to pass validation
-- **cookies** Rails utility allows manipulation of browser cookies as if they were hashes
-  - are not hashes, it's an abstraction
-  - each element takes a hash of two elements
-    - **value** of the cookie
-    - **expires** date (optional)
-  - has **permanent** method which sets **expires** to 20 years
-- intro to *Rails time helpers* on fixnum
-  - creates useful strings from semantic method chains
-  - e.g. `1.year.from_now` prints the date a year ago
-- can now fetch users using remember token: `User.find_by(remember_token: remember_token)`
-
-8.2.3 | Current user
-- need a way to retrieve user on subsequent page views
-- **current_user** will be available in the controller and the view
-- define *assignment function** (special syntax)
-  - takes arg, user, which is right hand side of assignment
-  - sets user to instance variable @current_user, storing for later user
-- can also define a *getter*, but this is the same as **attr_accessor**, which defines setters/getters
-- this simple implementation will not persist @current_user between page views
-  - due to stateless nature of http interactions
-  - subsquent requests sets variables to defaults, such as @current_user = nil
-- use the **User.encrypt** method with the browser cookie to fetch the current user
-  - can memoize lookup using the *or equals* operator ( ||= )
-  - memoize is only effective if **current_user** is used more than once per page view
-- *or equals*
-  - if value on LHS is nil or false (falsey in Ruby), then assigns RHS
-  - else returns LHS
-  - shorthand for: `x = x || y`
-  - *or* evals from left to right, *shortcircuit evaluation*
-  - follows similar for as `x = x + y === x += y`
-
-### 8.2.4 | Changing the layout links
-- update the header to show "Sign in" when the user is not signed in and "Sign out" when signed in
-  - will also add Accounts menu with links to "Profile", "Settings" and "Sign out"
-- implement a **signed_in?** method
-  - checks if **current_user** is non-**nil**
-  - uses the "not" operator, **!** (bang)
-- Add links to dropdown using bookstrap dropdowns
-  - "Sign out" link to user HTTP DELETE, needs to be specified
-  - browsers cannot issues HTTP DELETE, Rails fakes it with js
-- "Profile" link uses **current_user** as path
-  - Rails allows us to refer to user
-  - auto converts **current_user** to **user_path(current_user)**
-- add Bootstrap js to **application.js**
-
-  `//=require bootstrap` in *application.js*
-
-- signed in user now sees 'Account' dropdown menu
-- verify we can signin, broswer has cookie for *remember_token*, and specs are green
-- signout does not work, since sessions controller does not have destroy
-
-### 8.2.5 | Signin upon signup
-- current implementation, user is not signed in by default when signing up
-- add test to 'after user saved' to check for 'Sign out' link
-  - this is a side effect of signing in
-  - this check is also performed in *authentication_pages_spec.rb*
-- update **users_controller create** method
-  - if **@user.save** is true, call **sign_in** method passing it **@user**
-  - **sign_in** action is defined in **sessions_helper.rb**
-
-### 8.2.6 | Signing out
-- use RESTful convention to signing out
-  - sign in used **new** for the page and **create** to complete signin
-  - sign out will use **destroy** action to delete session
-- add test nested within sign in w/ valid info
-  - click 'Sign out' link
-  - verify that 'Sign in' link is now present
-  - optionally check that 'Sign out' link is gone (redundant if we assume mutual exclusion)
-- in destroy action
-  - sign user out by calling **sign_out**
-  - send user to home by calling **redirect_to root_url**
-- **sign_out** method
-  - defined in Sessions helper module
-  - change current user's token in db
-    - in case cookie was stolen, it is now invalid
-  - user **cookies.delete** to delete the **:remember_token** cookie
-  - unset the current user (assign to nil)
-    - this happens as a side effect of the **redirect** but it is not good to rely on this
-- all specs green
-  - important to not this does not test everything, i.e.
-    - how long "remember me" is set
-    - if cookie is set and deleted
-  - author notes that these kind of tests tend to rely on implementation which are brittle and can change
-  - these test for core functionality: sign in, stay on the page, sign out
-
-## 8.3 | Introduction to Cucumber
-- Behavior Driven Development (BDD) stlye testing framework
-- allows for plain text stories to define tests
-  - can be shared with non-tech people
-  - readabiliy
-  - can be verbose
-  - emphasis on high level behavior instead of low leve implementation
-
-### 8.3.1 | Installation and setup
-- install the following gems
-  - cucumber-rails
-  - database_cleaner
-- run: `rails generate cucumber:install`
-  - will create **features/** directory
-
-### 8.3.2 | Features and steps
-- tests in **features/** director with *.feature* extension
-- cucumber uses plain text language, Gherkin
-- tests are specified by:
-  - Features, which have ...
-    - Scenarios, which have ...
-      - Given statements : setup
-      - When statements : context
-      - Then statements : condition
-- Given, When and Then statements are plain text in test, but defined in *step files*
-  - map plain text to ruby code (capybara)
-  - **features/step_definitions**
-  - *.rb* files
-  - these are methods which takes regex and block
-    - regex matches text of statement in *.feature* file
-    - block is Rspec/Capycara code to execute
-- the Rspec code is very similary to our code from previous spec tests
-  - access to **page** object
-- run tests
-  - `bundle exec cucumber features`
-  - `bundle exec rake cucumber`
-  - `bundle exec rake cucumber:ok`
-
-### 8.3.3 | Counterpoint: Rspec custom matchers
-- case: integration tests vs. Cucumber
-- cucumber seperates concerns
-  - tests are seperate from code that implements them
-    - if implementation changes, tests can stay the same, only steps change
-  - this is both good and bad
-  - offers highest level of abstraction
-- cucumber: easy to read, harder to write
-- rspec: harder to read, easier to write
-- Rspec *custom matchers* and helper methods
-  - keeps code DRY
-  - seperate concerns like cucumber
-- add custom matcher for 'have_error_message' and to fill in valid user info
-  - define in same utilities file as **full_title_helper**
-    - note: **full_title** is actually defined in applicaiton helper which is included
-
-## 8.4 | Conclusion
-- implemented full suite of registration and login behaviors
-- next step to restrict access to pages based on user idenity and sign on status, ch 9
-- also in ch 9
-  - user to edit info
-  - admin to remove users
-- merge changes to back to master
-- push to Heroku
-
-## 8.5 | Exercises
-1) refactor sign in form to use **form_tag** instead of **form_for**
-
-- http://railscasts.com/episodes/270-authentication-in-rails-3-1
-  - **http_basic_authenticate_with** :name => 'something', :password => 'something'
-- **form_for** is used when form is backed by specific model
-- **form_tag** creates basic form
-  - do not def tags based on form
-    - f.text_field -> text_field_tag
-  - params hash no longer has form object layer
-    - params[:session][:email] -> params[:email]
-
-2) refactor tests to leverage helper funcitons and rspec custom matchers, also refactor into different files
-
-- rpsec custom matchers must return one value?
-  - returns one value true/false
-  - how to combine multiple?
-  - cannot use negative 'not_to'? -> didn't work in case of signin/sing out
 
 
 
@@ -1640,13 +1299,357 @@ $ bundle exec rake db:migrate
 4) user **content_tag** to clean up flash code and verify tests still work
 
 
-
-
-# Chapter 9 | title #############################################################################
+# Chapter 8 | Sign in, Sign out #############################################################################
 
 #### Topics:
+  - sessions
+  - sign in
+  - sign out
+  - cucumber
 
 #### References:
+- Gherkin: plain text language used by Cucumber [https://github.com/cucumber/gherkin]
+
+#############################################################################
+
+- change layout based on signin status
+- restrict access to pages based on identity
+- investigate cucumber for Behavior Driven Development (BDD)
+- create new branch `$ git checkout -b ch8-sign-in-out`
+
+## 8.1 | Sessions and signin failure
+- a *session* is a semi-permanent connection between two computers
+- we will use sessions for handling *signing-in*
+  - forgetting session on browswer close
+  - providing checkbox for persistent sessions
+  - remembering sessions until user signs out
+  - * also common to expire after some timeout; not used here
+- model sessions as a restful resource
+  - sign-in = create
+  - sign-out = destroy
+  - will use *cookies* instead of db
+- in this section
+  - sessions controller + actions
+  - signin form
+
+### 8.1.1 | Sessions controller
+- handled by new action
+- send **POST** request to create action
+- send **DELETE** request destroy action
+- to generate session controller and integration test
+
+    $ rails generate controller Sessions --no-test-framework
+    $ rails generate integration_test authentication_pages
+
+- signin page at **signin_path**
+- start with minimal spec for auth page
+- add **resources** to route file (only new, create, destroy) and matching routes
+
+    resources :sessions, only: [:new, :create, :destroy]
+    match '/signin',  to: 'sessions#new',           via: 'get'
+    match '/signout', to: 'sessions#destory',       via: 'delete'
+
+- **via: 'delete'** should be invoked via HTTP delete
+
+  | HTTP Method | URL         | Named Route    | Action   | Purpose              |
+  |------------ | ------------|----------------|----------|----------------------|
+  | GET         | /signin     | signin_path    | new      | page for new session |
+  | POST        | /sessions   | sessions_path  | create   | create new session   |
+  | DELETE      | /signout    | signout_path   | destroy  | delete session       |
+
+- to see all routes, run **rake routes**
+- update controller with aforementioned actions
+- create signing page **app/views/sessions/new.html.erb**
+- NOTE: test for title is case senstive, test for content is not
+
+### 8.1.2 | Signin tests
+- similar to signup form, except only two fields
+- when signin is invalid, rerender a signin page and flash error
+- Capybara 2.0, **have_selector** only selects visible HTML elements
+- add spec test for click sign in button with invalide (none) information
+- to test for successful signin, we'll check
+  - title (which should reflect user's name)
+  - changes to navigation
+    - a link to profile page
+    - a sign out link
+    - lack of sign in link
+- defer testing 'Settings' and 'Users' until ch 9
+- write tests for valid info
+  - **have_link** which matches text and href
+  - use upcase on email to ensure match
+
+### 8.1.3 | Signin form
+- will use **form_for** again
+- no Session model, so wont be exactly the same as User signup
+- Rails can refer to **action** of the form
+  - need to give name of resouce and url to point to
+- could also use **form_tag** instead of **form_for**, but not common in signin pages
+- generated form HTML very similary to signup form
+
+### 8.1.4 | Reviewing from submission
+- params has *session* which is a hash containing submitted *email* and *password*
+- populate **create** action in the sessions controller to find user by email and auth pw
+  - recall email is save in downcase for case insentivity
+  - **authenticate** method (provided by **has_secture_password**) returns false if incorrect pw
+  - check for existence of user and auth pw (common pattern)
+    - auth only checked if user is anything but *nil* or *false*
+
+### 8.1.5 | Rendering with flash message
+- cannot use same technique to render flash messages, bc session is not an Active Record object
+- naaive approach is to assign value to flash obj in controller, weird results
+  - flash persists for one request
+  - render does not count as a request, like redirect
+  - therefore, flash will persist for one request longer than we want
+  - e.g. submit bad info, then go to homepage; flash persists!
+- add test to catch this
+  - add nested test which will click home link, and check again for the flash
+- will use **flash.now** instead of **flash**
+  - used for displaying flash on rendered pages
+  - disappears on additional request
+- tests are now green, wahh hoo
+
+## 8.2 | Signin success
+- most ruby intensive section
+- fill out create action in sessions controller
+  - **sign_in** function (helper to implemenet)
+  - redirect to user profile page
+
+### 8.2.1 | Remember me
+- will remember session forever and only sign out user when user expliclty does so
+- signin functions will cross MVC lines
+- could write new class, but Ruby provides modules so we will use *SessionsHelper* module instead
+  - this module is available in the views rendered by Sessions controller
+  - not available in controllers
+    - add include to application controller: `include SessionHelper`
+- HTTP is stateless, therefore web app must track user progress from page to page
+- Rails has build in **session** function which is used to store *remember_token*
+  - setting this token to user id make its available to each page
+  - stores in browswer cookie, expires on browser close
+  - secures sessions since spoofed ids wont match rememebred token
+- we want sessions to persists even after browswer close
+- need a permantent way to id signed in user
+- will generate remember token for each user
+  - store as permanent cookie which does not expire on broswer close
+- since remember token is associated with the user, add it to the User model
+  - remember, tests first!
+  - generate migration: `rails generate migration add_remember_token_to_users`
+  - fill in migration with string col for token and index (since we will look up users with it)
+  - does not have to be unique?
+  - update the database!
+- specs are green
+- what will the remember token be?
+  - large random string which is unique
+  - will use **urlsafe_base64** method from **SecureRandom** module in Ruby std lib
+    - will return string of 16 chars
+    - can be chars, digits, dash, and underscore
+    - prob of collision low: 1/(64^16) = 10^-29
+  - will store this in browser and an encrypted version in the database
+- will get cookie from browser, encrypt, and search for user
+- encrypt in db is good, if compromised, cannot be used to sign in
+- will change this every time a new session is started
+  - mitigate affects of *session hijacking*
+  - site wide SSL so that tokens are not visible over public wifi
+- will use a *callback* in the context of email uniqueness to verify that every user has a valid token
+  - will use **before_create** to create token for newly created users
+- to tests, save a test user for the first time and check that token is not blank
+  - this test will intro **its** which looks at the given attribute and not the subject
+- add **before_create** filter to user.rb
+  - pass it a *method reference* instead of a block, like we did in **before_save**
+  - define private method **create_remember_token**
+  - method will assign an attr of user using **self**, which referes to user's remember_token
+  - also create methods to create and encrypt token
+- private methods are hidden from the interface: `User.private_method` doesn't work
+  - 'to_s' is to handle the nil case (might happen in tests, but shouldn't happen in browser)
+- using SHA1 hashing algo to encrypt
+  - much faster then bcrypt
+  - speed is important bc this will be run on each page
+  - less secure than bcrypt
+  - encryption of a 16 char random string essentially uncrackable
+- **encrypt** and **new_remember_token** are attached to the **User** class
+  - this way they do not need an instance of **User** class to be called
+    - aka class method, since it needs no instance
+  - declared public so they can be used outside of the User class
+- user_spec.rb should now be passing
+  - NOTE: encrypt method will return hash for nil and ''!
+
+### 8.2.2 | A working sign_in method
+- steps for sign_in method
+
+1) create new token
+2) place unencrypted cookie in browser using Rails **cookies** utility
+3) save encrypted cookie in database using **update_attribute**
+4) set *current_user* to *user*
+
+- step 4) isn't necessary due to redirect from **create** action, however not good to rely on this
+- **update_attribute** allows update of single attribute while bypassing valdation
+  - in our case, we would need the password and confirmation to pass validation
+- **cookies** Rails utility allows manipulation of browser cookies as if they were hashes
+  - are not hashes, it's an abstraction
+  - each element takes a hash of two elements
+    - **value** of the cookie
+    - **expires** date (optional)
+  - has **permanent** method which sets **expires** to 20 years
+- intro to *Rails time helpers* on fixnum
+  - creates useful strings from semantic method chains
+  - e.g. `1.year.from_now` prints the date a year ago
+- can now fetch users using remember token: `User.find_by(remember_token: remember_token)`
+
+### 8.2.3 | Current user
+- need a way to retrieve user on subsequent page views
+- **current_user** will be available in the controller and the view
+- define *assignment function** (special syntax)
+  - takes arg, user, which is right hand side of assignment
+  - sets user to instance variable @current_user, storing for later user
+- can also define a *getter*, but this is the same as **attr_accessor**, which defines setters/getters
+- this simple implementation will not persist @current_user between page views
+  - due to stateless nature of http interactions
+  - subsquent requests sets variables to defaults, such as @current_user = nil
+- use the **User.encrypt** method with the browser cookie to fetch the current user
+  - can memoize lookup using the *or equals* operator ( ||= )
+  - memoize is only effective if **current_user** is used more than once per page view
+- *or equals*
+  - if value on LHS is nil or false (falsey in Ruby), then assigns RHS
+  - else returns LHS
+  - shorthand for: `x = x || y`
+  - *or* evals from left to right, *shortcircuit evaluation*
+  - follows similar for as `x = x + y === x += y`
+
+### 8.2.4 | Changing the layout links
+- update the header to show "Sign in" when the user is not signed in and "Sign out" when signed in
+  - will also add Accounts menu with links to "Profile", "Settings" and "Sign out"
+- implement a **signed_in?** method
+  - checks if **current_user** is non-**nil**
+  - uses the "not" operator, **!** (bang)
+- Add links to dropdown using bookstrap dropdowns
+  - "Sign out" link to user HTTP DELETE, needs to be specified
+  - browsers cannot issues HTTP DELETE, Rails fakes it with js
+- "Profile" link uses **current_user** as path
+  - Rails allows us to refer to user
+  - auto converts **current_user** to **user_path(current_user)**
+- add Bootstrap js to **application.js**
+
+  `//=require bootstrap` in *application.js*
+
+- signed in user now sees 'Account' dropdown menu
+- verify we can signin, broswer has cookie for *remember_token*, and specs are green
+- signout does not work, since sessions controller does not have destroy
+
+### 8.2.5 | Signin upon signup
+- current implementation, user is not signed in by default when signing up
+- add test to 'after user saved' to check for 'Sign out' link
+  - this is a side effect of signing in
+  - this check is also performed in *authentication_pages_spec.rb*
+- update **users_controller create** method
+  - if **@user.save** is true, call **sign_in** method passing it **@user**
+  - **sign_in** action is defined in **sessions_helper.rb**
+
+### 8.2.6 | Signing out
+- use RESTful convention to signing out
+  - sign in used **new** for the page and **create** to complete signin
+  - sign out will use **destroy** action to delete session
+- add test nested within sign in w/ valid info
+  - click 'Sign out' link
+  - verify that 'Sign in' link is now present
+  - optionally check that 'Sign out' link is gone (redundant if we assume mutual exclusion)
+- in destroy action
+  - sign user out by calling **sign_out**
+  - send user to home by calling **redirect_to root_url**
+- **sign_out** method
+  - defined in Sessions helper module
+  - change current user's token in db
+    - in case cookie was stolen, it is now invalid
+  - user **cookies.delete** to delete the **:remember_token** cookie
+  - unset the current user (assign to nil)
+    - this happens as a side effect of the **redirect** but it is not good to rely on this
+- all specs green
+  - important to not this does not test everything, i.e.
+    - how long "remember me" is set
+    - if cookie is set and deleted
+  - author notes that these kind of tests tend to rely on implementation which are brittle and can change
+  - these test for core functionality: sign in, stay on the page, sign out
+
+## 8.3 | Introduction to Cucumber
+- Behavior Driven Development (BDD) stlye testing framework
+- allows for plain text stories to define tests
+  - can be shared with non-tech people
+  - readabiliy
+  - can be verbose
+  - emphasis on high level behavior instead of low leve implementation
+
+### 8.3.1 | Installation and setup
+- install the following gems
+  - cucumber-rails
+  - database_cleaner
+- run: `rails generate cucumber:install`
+  - will create **features/** directory
+
+### 8.3.2 | Features and steps
+- tests in **features/** director with *.feature* extension
+- cucumber uses plain text language, Gherkin
+- tests are specified by:
+  - Features, which have ...
+    - Scenarios, which have ...
+      - Given statements : setup
+      - When statements : context
+      - Then statements : condition
+- Given, When and Then statements are plain text in test, but defined in *step files*
+  - map plain text to ruby code (capybara)
+  - **features/step_definitions**
+  - *.rb* files
+  - these are methods which takes regex and block
+    - regex matches text of statement in *.feature* file
+    - block is Rspec/Capycara code to execute
+- the Rspec code is very similary to our code from previous spec tests
+  - access to **page** object
+- run tests
+  - `bundle exec cucumber features`
+  - `bundle exec rake cucumber`
+  - `bundle exec rake cucumber:ok`
+
+### 8.3.3 | Counterpoint: Rspec custom matchers
+- case: integration tests vs. Cucumber
+- cucumber seperates concerns
+  - tests are seperate from code that implements them
+    - if implementation changes, tests can stay the same, only steps change
+  - this is both good and bad
+  - offers highest level of abstraction
+- cucumber: easy to read, harder to write
+- rspec: harder to read, easier to write
+- Rspec *custom matchers* and helper methods
+  - keeps code DRY
+  - seperate concerns like cucumber
+- add custom matcher for 'have_error_message' and to fill in valid user info
+  - define in same utilities file as **full_title_helper**
+    - note: **full_title** is actually defined in applicaiton helper which is included
+
+## 8.4 | Conclusion
+- implemented full suite of registration and login behaviors
+- next step to restrict access to pages based on user idenity and sign on status, ch 9
+- also in ch 9
+  - user to edit info
+  - admin to remove users
+- merge changes to back to master
+- push to Heroku
+
+## 8.5 | Exercises
+1) refactor sign in form to use **form_tag** instead of **form_for**
+
+- http://railscasts.com/episodes/270-authentication-in-rails-3-1
+  - **http_basic_authenticate_with** :name => 'something', :password => 'something'
+- **form_for** is used when form is backed by specific model
+- **form_tag** creates basic form
+  - do not def tags based on form
+    - f.text_field -> text_field_tag
+  - params hash no longer has form object layer
+    - params[:session][:email] -> params[:email]
+
+2) refactor tests to leverage helper funcitons and rspec custom matchers, also refactor into different files
+
+- rpsec custom matchers must return one value?
+  - returns one value true/false
+  - how to combine multiple?
+  - cannot use negative 'not_to'? -> didn't work in case of signin/sing out
+
 
 
 
