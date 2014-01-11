@@ -75,6 +75,35 @@
   - necessary when using HTTP requests (**get**,**post**,**patch**,**delete**) directly
 
 ### 9.1.2 | Unsuccessful edits
+- define **update** method
+  - attempt to update user attributes `user.update_attributes(user_params)`
+  - re-use *user_params* method (strong parameters)
+    - *strong parameters protect against mass assignment vulnerability*
+      - [wikipedia](http://en.wikipedia.org/wiki/Mass_assignment_vulnerability)
+- if invalid info, then **update_attributes** will return false
+  - render 'edit' page
+  - add **flash.now[:error]**
+- all tests are green
+
+### 9.1.3 | Successful edits
+- image edit done with gravatar
+- tests
+  - define new name and email
+  - fill in form with new info and current password
+  - click save
+  - verify that profile page shows
+  - verify success flash
+  - verify user is still signed in
+  - verify that user name and email have been updated
+- need to use **reload** method to reload user info from db
+- fill in **update** action for successfuly model update
+  - flash success method
+  - redirect to user instance (profile page)
+  - note, the redirect takes care of the flash.now vs flash issue
+- edits require password with every update, annoying but more secure
+- all specs pass
+- functionality complete
+
 
 
 
