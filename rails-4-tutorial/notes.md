@@ -105,6 +105,47 @@
 - functionality complete
 
 
+## 9.2 | Authorization
+- *authentication* allows us to identify users, *authorization* allows us to control what they do
+- edit and update are funcitonally complete, bit security flaws
+- signed in users can update ANY user's info
+- non-signed in users can access edit and update
+- will prevent signed in users from updating anyones info but they're own
+- will redirect non-signed in users to sign in page (plus helpful message)
+
+### 9.2.1 | Requiring signed in users
+- restrict access to **edit** and **update** actions
+- users who are not signed in, redirect to sign in page
+- user *patch* request to access **update** action
+  - no way to access via browser directly
+- when user HTTP request directly, have access to *response* obj
+- user *before filter*, **before_action**
+  - defaults for all actions
+  - use :only filter to restrict to certain actions
+  - in our case **edit** and **update**
+- redirect offers shortcut for populating **:notice** flash
+  - assigned via options hash
+  - does not work for **:error** and **:success**
+
+### 9.2.2 | Requiring the right user
+- ensure that correct user is accessing **edit** and **update**
+- will do this with another before filter which checks for the correct user
+- will not use capybara for tests
+  - access response objects directly
+  - submit get and patch requests to edit and update, respectively
+- since users should not be attempting this, redirect to root url, not signin
+- can pass options hash into factory girl, which overrides default attr values
+- before action, **correct_user**
+  - declare instance variable, using lookup with id from params hash
+  - verify if current_user?
+  - potential redirect to root url
+- add **current_user?** to Sessions helper
+  - does comparison of current user and user in arg
+- we can remove the declaration of this instance var in **edit** and **update** actions
+
+
+
+
 
 
 #############################################################################
