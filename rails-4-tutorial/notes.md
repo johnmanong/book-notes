@@ -19,7 +19,7 @@
 
 
 #### References:
-
+Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
 
 #############################################################################
 
@@ -142,6 +142,33 @@
 - add **current_user?** to Sessions helper
   - does comparison of current user and user in arg
 - we can remove the declaration of this instance var in **edit** and **update** actions
+
+### 9.2.3 | Friendly forwarding
+- if non-signed in user tries to access restricted page (like edit)
+  - redirects to signin page
+  - after successful signin, redirects to root
+  - would like to make it redirect to original protected page
+  - this may enevitably send the user to root if it's not their page
+- testing
+  - create test user
+  - visit edit path for that user
+  - *redirects to signin page
+  - enter valid credentials
+  - click signin
+  - ensure you're on the edit page for that user
+- in order to accomplish this, need to store intended location
+- we will store this in the session variable (similar to cookies variable, provided by Rails)
+- in Sessions Helper
+  - **store_location**
+    - stash request url in session variable
+    - only return url for GET requests
+      - otherwise GET request would get sent to a url expecting PUT, PATCH, DELETE; BAD!
+  - **redirect_back_or**
+    - redirects to stored url or default, then deletes stored url
+- call **store_location** in before filter, before redirect to "please sign in"
+- call **redirect_back_or** when creating a session, passing **user** as the default
+
+## 9.3 | Showing all users
 
 
 
