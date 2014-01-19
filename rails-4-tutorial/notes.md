@@ -169,6 +169,39 @@ Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
 - call **redirect_back_or** when creating a session, passing **user** as the default
 
 ## 9.3 | Showing all users
+- will fill in **index** action for User, which shows all users
+- seed db with data
+- paginate user output
+
+### 9.3.1 | User index
+- **show** pages available to all users (signed in and not)
+- **index** or all user page only available to signed in users
+- write test to ensure that non-signed in user cannot access **users_path**
+  - part of auth tests
+- in controller
+  - define **index** method
+  - add this actiont to before filter **signed_in_user**
+- write tests for signed in user
+  - user factory to create three unique users
+  - sign in with first users
+  - visit **users_path**
+  - make sure page has 'All users' content and title (correct page)
+  - make sure that all users created are shown within *li* elements
+  - in user pages spec
+  - NOTE: if subject is set to page, then custom matchers, which expect page, do not seem to work (page undef)
+- back to users controller
+  - fill in **index** action, assigning **User.all** to an instance var
+  - this is a bad idea in general (i.e. a lot of users), will revisit when paginating
+- create *index* view
+  - provide title and h1
+  - create an unordered list
+  - fill *ul* with *li*s
+    - each list item has gravatar image (using helper) and link to profile page with user name as text
+- add some SCSS
+- add url to **users_path** to header for signed in users
+- all green and it works ... but it's a ghost town up in here
+
+
 
 
 
