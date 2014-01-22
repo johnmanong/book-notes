@@ -20,6 +20,9 @@
 
 #### References:
 Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
+Faker Gem : 
+will_paginate/bootstrap-will_paginate Gems : 
+DELETE w/o js : http://railscasts.com/episodes/77-destroy-without-javascript
 
 #############################################################################
 
@@ -200,6 +203,131 @@ Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
 - add some SCSS
 - add url to **users_path** to header for signed in users
 - all green and it works ... but it's a ghost town up in here
+
+### 9.3.2 | Sample users
+- will create rake task to populate the db with example users
+- will use Faker gem to create names
+- rake task:
+  - defined by *namespace* (in our case **db**)
+  - creates 1 sample users and 99 fakes
+  - pass the environment to the task so it has access to db
+  - user **User.create!** which throws on invalid input (instead of just returning false)
+    - noisier
+  - run the following commands to clean, seed and rebuild db
+
+      bundle exex rake db:reset       # clear db
+      bundle exex rake db:populate    # this is our task!
+      bundle exex rake test:prepare   # rebuild test db
+
+### 9.3.3 | Pagination
+- too many (all) results returned on index page
+- will use *will_paginate* and *bootstrap-will_paginate* gems for pagination and styling
+- write tests for index page
+  - check for div with pagination class (will not test gem itself)
+  - verify that all users are present (pagination only, not all users)
+- we will need to create a lot of users at once -> FactoryGirl sequences
+  - sequence takes a symbol for the corresponding attr and a block with one var
+    - e.g. `sequence(:name) { |n| "Person_#{n}" }`
+  - this allows us to assign an index with each sample user (i.e. "Person_1", "Person_2", etc.)
+  - block var is automatically incremented
+- will use **before(:all)** in spec tests for pagination
+  - passing the **:all** symbol as an arg tells rspec to run this *once* before all tests in block
+  - performance since recreating would be redundant
+  - complimentary **after(:all)** to delete db entries
+ - in **Users controller index** action
+  - update to return only one page of users instead of all
+  - take page out of params
+  - defaults to page 1 (will break if "", added default yourself)
+- in **user/index** view
+  - call the **will_paginate** before and after the **ul** containing the list of users
+    - automatically finds **@users** (since we in the users/index view)
+    - adds markup to paginate through users
+    - nil defaults to first page
+    - expects users to be fetched using the **paginate** method
+
+### 9.3.4 | Partial refactoring
+- in **index** partial, we can call **render** on the *user* variable directly
+- Rails knowns to look for a partial with the name **_user**
+- can even call **render** on the collection of users, **@users**
+- Rails will iterate through collection and call render on the **_user** partial for each
+- refactoring should not break spec tests, which test functionaliy
+
+
+## 9.4 | Deleting Users
+- **destroy** is the last REST action left
+- will define **destroy** action to delete users
+- will first create class of user, *admin*, who are the only ones authorized to do so
+
+### 9.4.1 | Administrative users
+- will add a boolean column to user table to designate admins
+  - will automatically create **admin?** boolean method to test if a user is an admin
+- write tests on user model
+  - should respond to **admin**
+  - admin should be false by default
+  - can toggle to true (**user.toggle!(:admin)**)
+- rspec convention `it {should be_admin}`, implies **admin?** method exists
+- write migration for adding this column to db, setting default to false
+  - default not necessarily needed, since default is **nil**, which is false
+  - this is more explicit, which is good
+- run migration and rebuild test db
+- update **populate** rake task to build 1 admin user and 99 non-admins
+- Revisiting strong parameters
+  - without protection, anyone can submit a patch request with admin=true
+  - huge security problem
+  - essential to pass only safe-to-edit params
+  - do not include admin here, this will deny web requests to update this attr
+  - good idea to write a tests for this, but left as an exercise
+
+### 9.4.2 | the `destory` action
+- need to add destroy links and implement destroy action
+- only add destroy links to index page for admins and not their own profile
+- add admin block to user factory to set admin to true
+  - create admin: `FactoryGirl.create(:admin)`
+- ordinary users should not see delete links
+- tests
+  - ordinary users should not see delete links
+  - admin users should see delete links
+  - admin should not see a delete link for themselves
+  - clicking any delete link should reduce count by 1
+- tests use **match: :first** which tells Capybara to use first match
+- update the view
+  - add condition to check for admin
+  - if admin show link for delete which uses **method: :delete**
+- remember, the browser cannot issue delete request so Rails fakes it in js
+  - this means that DELETE will not work w/o javascript enabled
+  - can fake it with a POST and a form
+  - see Railscast for more info
+- in controller
+  - add **:delete** to **signed_in_user** before filter
+  - define destroy method
+    - find user by id
+    - call destroy on user
+    - add a flash success message
+    - redirect to users_user
+- Problem: any user can issue a DELETE request to delete any other user!
+  - this can be done from the command line using CURL
+- add to auth page tests
+  - if non-admin calls delete
+  - expect response to redirect to root url
+  - similar to validation for **patch**
+- still has flaw that admin can delete themselves, although not through ui
+  - they got whats coming to them
+- define **admin_user** in before filter in *users controller*
+  - redirect to root url unless current user is admin
+
+## 9.5 | Consclusion
+- users can now:
+  - sign up
+  - sign in/out
+  - edit their info
+  - see user profile pictures
+  - see index page of all users
+- ch 10: Twitter-like micro posts
+- ch 11: status feed of posts from followed users
+- these chapters will use **has_many** and **has_many through**
+- merge branch, push to heroku
+
+## 9.6 | Exercises
 
 
 
