@@ -328,6 +328,54 @@ DELETE w/o js : http://railscasts.com/episodes/77-destroy-without-javascript
 - merge branch, push to heroku
 
 ## 9.6 | Exercises
+1) make sure updating to admin does not work
+  - first add :admin to users_param to allow it to be set (be sure to remove!)
+  - in tests
+    - create a params hash user: admin, pw, pw_conf
+    - sign in user
+    - submit a patch request, using the **user_path(user)** for route, and passing in params
+    - reload user and make sure that user is NOT admin
+  - removing admin from users_params should allow test to pass
+
+2) update 'change' link nexto to Gravatar image to open in a new tab or window
+  - use **link_to** helper
+  - set target to '_blank'
+  - Refs:
+    - http://stackoverflow.com/questions/12133894/open-link-in-new-tab-with-link-to
+    - http://api.rubyonrails.org/classes/ActionView/Helpers/UrlHelper.html
+
+3) Add test to make sure that Profile and Settings do not appear when not signed in
+  - within descript invalide data
+    - add check that settings and profile links should not be present
+    - refactor checks into a rpsec matcher
+    - within matcher, add check for user var and default to {} if not present
+
+4) use **sign_in** in as many places as possible...didn't really find anywhere it was already used
+  - 'attempting to access a protected page' could use it, but want to ensure redirect is happening
+
+5) refactor sign up and edit form to use fields partial
+  - text on confirmation field needs to be resolved between two pages
+
+6) redirect signed in users to root url when accessing **new** and **create** actions
+  - define new test within *user page specs* for the signup page
+  - create and signin test user (no capybara option)
+  - make sure that get to *signup_path* and post to *users_path* both redirect to root_url
+  - add before filter to *users controller* to check for signed in user using **signed_in?** helper
+
+7) learn about the **request** object TOOD
+  - http://api.rubyonrails.org/v4.0.0/classes/ActionDispatch/Request.html
+
+8) verify that friendly forwarding forgets intended destination after first log in
+  - within test to access protected pages
+    - within after sign in test
+    - sign out user (use click_link 'Sign out', solution in book is not correct)
+    - sign user back in
+    - verify that user is brought to profile page and not the edit page
+
+9) modify **destroy** action so that admins cannot delete themselves
+  - add a non-capybara spec test to send DELETE request to admin url and check count
+  - add logic in destroy action to check if requested user is the current user
+  - if so flash error and do not destory user
 
 
 
