@@ -13,11 +13,24 @@
 
 # Chapter 10 | User Microposts #############################################################################
 
-#### Topics:
+# Topics:
+- micropost model
+- showing microposts
+- manipulating microposts
 
-#### References:
+# References:
 
 
+
+#Notes
+
+- ch9 completed REST actions for users
+- this chapter will add the user microposts resource
+- associate user and microposts data models using `has_many` and `belongs_to`
+- create new branch 'ch10-user-microposts'
+
+## 10.1 |  A Micropost model
+- 
 
 
 
