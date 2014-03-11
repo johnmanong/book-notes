@@ -9,373 +9,13 @@
 
 
 
-# Chapter 9 | title #############################################################################
+
+
+# Chapter 10 | User Microposts #############################################################################
 
 #### Topics:
-- updating users
-- authorization
-- showing all users
-- deleting users
-
 
 #### References:
-Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
-Faker Gem : 
-will_paginate/bootstrap-will_paginate Gems : 
-DELETE w/o js : http://railscasts.com/episodes/77-destroy-without-javascript
-
-#############################################################################
-
-- update Users resource
-  - edit, update, index, destroy
-- enforce security model
-- sample data
-- pagniation
-- destory users
-- priviliged admins
-
-## 9.1 | Updating users
-- editing user follows similiar pattern to creating user (ch 7)
-  - **new** action to render view for new users -> **edit** action to render view
-  - **create** responds to POST request -> **update** responds to PATCH request
-- signed in user can only edit their own info
-  - need to intro access restriction
-  - will leverage auth infrastructure introduced in ch 8 and *before_filter*
-
-### 9.1.1 | Edit form
-- test for this page are analogous to those for sign in page
-  - create test user
-  - visit page
-  - test for correct page
-    - test for title
-    - test for content
-    - test for change link
-  - test invalid input
-    - click submit
-    - test for error content
-- fill out **edit** action in *Users* controller
-  - proper url is 'users/:id/edit'
-  - *id* is available in params hash: `params[:id]`
-  - find user by id and assign to instance variable
-- fill out the 'users/edit' view to get tests to pass
-  - reuse 'errors' partial
-  - form is same as /users/new
-  - passing **@user** to form, Rails prepopulates *name* and *email* fields
-- form generated HTML
-  - hidden input field with name **_method** and value **patch**
-  - broswers cannot submit PATCH request, as needed by REST
-  - broswer users POST request
-  - this is how Rails fakes it
-- form_for uses POST or PATCH depending if the record is new
-  - uses **new_record?** method to check if record is new
-  - true: uses POST to **create** new user
-  - false: uses PATCH to **update** existing user
-- add 'Settings' link to drop down menu
-  - add test to auth specs
-  - fill in header view
-- fill in **sign_in** helper method to sign in user with valid info
-  - provide option to manipulate cookie if not using capybara
-  - necessary when using HTTP requests (**get**,**post**,**patch**,**delete**) directly
-
-### 9.1.2 | Unsuccessful edits
-- define **update** method
-  - attempt to update user attributes `user.update_attributes(user_params)`
-  - re-use *user_params* method (strong parameters)
-    - *strong parameters protect against mass assignment vulnerability*
-      - [wikipedia](http://en.wikipedia.org/wiki/Mass_assignment_vulnerability)
-- if invalid info, then **update_attributes** will return false
-  - render 'edit' page
-  - add **flash.now[:error]**
-- all tests are green
-
-### 9.1.3 | Successful edits
-- image edit done with gravatar
-- tests
-  - define new name and email
-  - fill in form with new info and current password
-  - click save
-  - verify that profile page shows
-  - verify success flash
-  - verify user is still signed in
-  - verify that user name and email have been updated
-- need to use **reload** method to reload user info from db
-- fill in **update** action for successfuly model update
-  - flash success method
-  - redirect to user instance (profile page)
-  - note, the redirect takes care of the flash.now vs flash issue
-- edits require password with every update, annoying but more secure
-- all specs pass
-- functionality complete
-
-
-## 9.2 | Authorization
-- *authentication* allows us to identify users, *authorization* allows us to control what they do
-- edit and update are funcitonally complete, bit security flaws
-- signed in users can update ANY user's info
-- non-signed in users can access edit and update
-- will prevent signed in users from updating anyones info but they're own
-- will redirect non-signed in users to sign in page (plus helpful message)
-
-### 9.2.1 | Requiring signed in users
-- restrict access to **edit** and **update** actions
-- users who are not signed in, redirect to sign in page
-- user *patch* request to access **update** action
-  - no way to access via browser directly
-- when user HTTP request directly, have access to *response* obj
-- user *before filter*, **before_action**
-  - defaults for all actions
-  - use :only filter to restrict to certain actions
-  - in our case **edit** and **update**
-- redirect offers shortcut for populating **:notice** flash
-  - assigned via options hash
-  - does not work for **:error** and **:success**
-
-### 9.2.2 | Requiring the right user
-- ensure that correct user is accessing **edit** and **update**
-- will do this with another before filter which checks for the correct user
-- will not use capybara for tests
-  - access response objects directly
-  - submit get and patch requests to edit and update, respectively
-- since users should not be attempting this, redirect to root url, not signin
-- can pass options hash into factory girl, which overrides default attr values
-- before action, **correct_user**
-  - declare instance variable, using lookup with id from params hash
-  - verify if current_user?
-  - potential redirect to root url
-- add **current_user?** to Sessions helper
-  - does comparison of current user and user in arg
-- we can remove the declaration of this instance var in **edit** and **update** actions
-
-### 9.2.3 | Friendly forwarding
-- if non-signed in user tries to access restricted page (like edit)
-  - redirects to signin page
-  - after successful signin, redirects to root
-  - would like to make it redirect to original protected page
-  - this may enevitably send the user to root if it's not their page
-- testing
-  - create test user
-  - visit edit path for that user
-  - *redirects to signin page
-  - enter valid credentials
-  - click signin
-  - ensure you're on the edit page for that user
-- in order to accomplish this, need to store intended location
-- we will store this in the session variable (similar to cookies variable, provided by Rails)
-- in Sessions Helper
-  - **store_location**
-    - stash request url in session variable
-    - only return url for GET requests
-      - otherwise GET request would get sent to a url expecting PUT, PATCH, DELETE; BAD!
-  - **redirect_back_or**
-    - redirects to stored url or default, then deletes stored url
-- call **store_location** in before filter, before redirect to "please sign in"
-- call **redirect_back_or** when creating a session, passing **user** as the default
-
-## 9.3 | Showing all users
-- will fill in **index** action for User, which shows all users
-- seed db with data
-- paginate user output
-
-### 9.3.1 | User index
-- **show** pages available to all users (signed in and not)
-- **index** or all user page only available to signed in users
-- write test to ensure that non-signed in user cannot access **users_path**
-  - part of auth tests
-- in controller
-  - define **index** method
-  - add this actiont to before filter **signed_in_user**
-- write tests for signed in user
-  - user factory to create three unique users
-  - sign in with first users
-  - visit **users_path**
-  - make sure page has 'All users' content and title (correct page)
-  - make sure that all users created are shown within *li* elements
-  - in user pages spec
-  - NOTE: if subject is set to page, then custom matchers, which expect page, do not seem to work (page undef)
-- back to users controller
-  - fill in **index** action, assigning **User.all** to an instance var
-  - this is a bad idea in general (i.e. a lot of users), will revisit when paginating
-- create *index* view
-  - provide title and h1
-  - create an unordered list
-  - fill *ul* with *li*s
-    - each list item has gravatar image (using helper) and link to profile page with user name as text
-- add some SCSS
-- add url to **users_path** to header for signed in users
-- all green and it works ... but it's a ghost town up in here
-
-### 9.3.2 | Sample users
-- will create rake task to populate the db with example users
-- will use Faker gem to create names
-- rake task:
-  - defined by *namespace* (in our case **db**)
-  - creates 1 sample users and 99 fakes
-  - pass the environment to the task so it has access to db
-  - user **User.create!** which throws on invalid input (instead of just returning false)
-    - noisier
-  - run the following commands to clean, seed and rebuild db
-
-      bundle exex rake db:reset       # clear db
-      bundle exex rake db:populate    # this is our task!
-      bundle exex rake test:prepare   # rebuild test db
-
-### 9.3.3 | Pagination
-- too many (all) results returned on index page
-- will use *will_paginate* and *bootstrap-will_paginate* gems for pagination and styling
-- write tests for index page
-  - check for div with pagination class (will not test gem itself)
-  - verify that all users are present (pagination only, not all users)
-- we will need to create a lot of users at once -> FactoryGirl sequences
-  - sequence takes a symbol for the corresponding attr and a block with one var
-    - e.g. `sequence(:name) { |n| "Person_#{n}" }`
-  - this allows us to assign an index with each sample user (i.e. "Person_1", "Person_2", etc.)
-  - block var is automatically incremented
-- will use **before(:all)** in spec tests for pagination
-  - passing the **:all** symbol as an arg tells rspec to run this *once* before all tests in block
-  - performance since recreating would be redundant
-  - complimentary **after(:all)** to delete db entries
- - in **Users controller index** action
-  - update to return only one page of users instead of all
-  - take page out of params
-  - defaults to page 1 (will break if "", added default yourself)
-- in **user/index** view
-  - call the **will_paginate** before and after the **ul** containing the list of users
-    - automatically finds **@users** (since we in the users/index view)
-    - adds markup to paginate through users
-    - nil defaults to first page
-    - expects users to be fetched using the **paginate** method
-
-### 9.3.4 | Partial refactoring
-- in **index** partial, we can call **render** on the *user* variable directly
-- Rails knowns to look for a partial with the name **_user**
-- can even call **render** on the collection of users, **@users**
-- Rails will iterate through collection and call render on the **_user** partial for each
-- refactoring should not break spec tests, which test functionaliy
-
-
-## 9.4 | Deleting Users
-- **destroy** is the last REST action left
-- will define **destroy** action to delete users
-- will first create class of user, *admin*, who are the only ones authorized to do so
-
-### 9.4.1 | Administrative users
-- will add a boolean column to user table to designate admins
-  - will automatically create **admin?** boolean method to test if a user is an admin
-- write tests on user model
-  - should respond to **admin**
-  - admin should be false by default
-  - can toggle to true (**user.toggle!(:admin)**)
-- rspec convention `it {should be_admin}`, implies **admin?** method exists
-- write migration for adding this column to db, setting default to false
-  - default not necessarily needed, since default is **nil**, which is false
-  - this is more explicit, which is good
-- run migration and rebuild test db
-- update **populate** rake task to build 1 admin user and 99 non-admins
-- Revisiting strong parameters
-  - without protection, anyone can submit a patch request with admin=true
-  - huge security problem
-  - essential to pass only safe-to-edit params
-  - do not include admin here, this will deny web requests to update this attr
-  - good idea to write a tests for this, but left as an exercise
-
-### 9.4.2 | the `destory` action
-- need to add destroy links and implement destroy action
-- only add destroy links to index page for admins and not their own profile
-- add admin block to user factory to set admin to true
-  - create admin: `FactoryGirl.create(:admin)`
-- ordinary users should not see delete links
-- tests
-  - ordinary users should not see delete links
-  - admin users should see delete links
-  - admin should not see a delete link for themselves
-  - clicking any delete link should reduce count by 1
-- tests use **match: :first** which tells Capybara to use first match
-- update the view
-  - add condition to check for admin
-  - if admin show link for delete which uses **method: :delete**
-- remember, the browser cannot issue delete request so Rails fakes it in js
-  - this means that DELETE will not work w/o javascript enabled
-  - can fake it with a POST and a form
-  - see Railscast for more info
-- in controller
-  - add **:delete** to **signed_in_user** before filter
-  - define destroy method
-    - find user by id
-    - call destroy on user
-    - add a flash success message
-    - redirect to users_user
-- Problem: any user can issue a DELETE request to delete any other user!
-  - this can be done from the command line using CURL
-- add to auth page tests
-  - if non-admin calls delete
-  - expect response to redirect to root url
-  - similar to validation for **patch**
-- still has flaw that admin can delete themselves, although not through ui
-  - they got whats coming to them
-- define **admin_user** in before filter in *users controller*
-  - redirect to root url unless current user is admin
-
-## 9.5 | Consclusion
-- users can now:
-  - sign up
-  - sign in/out
-  - edit their info
-  - see user profile pictures
-  - see index page of all users
-- ch 10: Twitter-like micro posts
-- ch 11: status feed of posts from followed users
-- these chapters will use **has_many** and **has_many through**
-- merge branch, push to heroku
-
-## 9.6 | Exercises
-1) make sure updating to admin does not work
-  - first add :admin to users_param to allow it to be set (be sure to remove!)
-  - in tests
-    - create a params hash user: admin, pw, pw_conf
-    - sign in user
-    - submit a patch request, using the **user_path(user)** for route, and passing in params
-    - reload user and make sure that user is NOT admin
-  - removing admin from users_params should allow test to pass
-
-2) update 'change' link nexto to Gravatar image to open in a new tab or window
-  - use **link_to** helper
-  - set target to '_blank'
-  - Refs:
-    - http://stackoverflow.com/questions/12133894/open-link-in-new-tab-with-link-to
-    - http://api.rubyonrails.org/classes/ActionView/Helpers/UrlHelper.html
-
-3) Add test to make sure that Profile and Settings do not appear when not signed in
-  - within descript invalide data
-    - add check that settings and profile links should not be present
-    - refactor checks into a rpsec matcher
-    - within matcher, add check for user var and default to {} if not present
-
-4) use **sign_in** in as many places as possible...didn't really find anywhere it was already used
-  - 'attempting to access a protected page' could use it, but want to ensure redirect is happening
-
-5) refactor sign up and edit form to use fields partial
-  - text on confirmation field needs to be resolved between two pages
-
-6) redirect signed in users to root url when accessing **new** and **create** actions
-  - define new test within *user page specs* for the signup page
-  - create and signin test user (no capybara option)
-  - make sure that get to *signup_path* and post to *users_path* both redirect to root_url
-  - add before filter to *users controller* to check for signed in user using **signed_in?** helper
-
-7) learn about the **request** object TOOD
-  - http://api.rubyonrails.org/v4.0.0/classes/ActionDispatch/Request.html
-
-8) verify that friendly forwarding forgets intended destination after first log in
-  - within test to access protected pages
-    - within after sign in test
-    - sign out user (use click_link 'Sign out', solution in book is not correct)
-    - sign user back in
-    - verify that user is brought to profile page and not the edit page
-
-9) modify **destroy** action so that admins cannot delete themselves
-  - add a non-capybara spec test to send DELETE request to admin url and check count
-  - add logic in destroy action to check if requested user is the current user
-  - if so flash error and do not destory user
 
 
 
@@ -2012,14 +1652,374 @@ $ bundle exec rake db:migrate
   - how to combine multiple?
   - cannot use negative 'not_to'? -> didn't work in case of signin/sing out
 
-
-
-
-# Chapter 10 | title #############################################################################
+# Chapter 9 | Updating, showing, and deleting users #############################################################################
 
 #### Topics:
+- updating users
+- authorization
+- showing all users
+- deleting users
+
 
 #### References:
+Clearance (Thoughtbot) : https://github.com/thoughtbot/clearance
+Faker Gem : 
+will_paginate/bootstrap-will_paginate Gems : 
+DELETE w/o js : http://railscasts.com/episodes/77-destroy-without-javascript
+
+#############################################################################
+
+- update Users resource
+  - edit, update, index, destroy
+- enforce security model
+- sample data
+- pagniation
+- destory users
+- priviliged admins
+
+## 9.1 | Updating users
+- editing user follows similiar pattern to creating user (ch 7)
+  - **new** action to render view for new users -> **edit** action to render view
+  - **create** responds to POST request -> **update** responds to PATCH request
+- signed in user can only edit their own info
+  - need to intro access restriction
+  - will leverage auth infrastructure introduced in ch 8 and *before_filter*
+
+### 9.1.1 | Edit form
+- test for this page are analogous to those for sign in page
+  - create test user
+  - visit page
+  - test for correct page
+    - test for title
+    - test for content
+    - test for change link
+  - test invalid input
+    - click submit
+    - test for error content
+- fill out **edit** action in *Users* controller
+  - proper url is 'users/:id/edit'
+  - *id* is available in params hash: `params[:id]`
+  - find user by id and assign to instance variable
+- fill out the 'users/edit' view to get tests to pass
+  - reuse 'errors' partial
+  - form is same as /users/new
+  - passing **@user** to form, Rails prepopulates *name* and *email* fields
+- form generated HTML
+  - hidden input field with name **_method** and value **patch**
+  - broswers cannot submit PATCH request, as needed by REST
+  - broswer users POST request
+  - this is how Rails fakes it
+- form_for uses POST or PATCH depending if the record is new
+  - uses **new_record?** method to check if record is new
+  - true: uses POST to **create** new user
+  - false: uses PATCH to **update** existing user
+- add 'Settings' link to drop down menu
+  - add test to auth specs
+  - fill in header view
+- fill in **sign_in** helper method to sign in user with valid info
+  - provide option to manipulate cookie if not using capybara
+  - necessary when using HTTP requests (**get**,**post**,**patch**,**delete**) directly
+
+### 9.1.2 | Unsuccessful edits
+- define **update** method
+  - attempt to update user attributes `user.update_attributes(user_params)`
+  - re-use *user_params* method (strong parameters)
+    - *strong parameters protect against mass assignment vulnerability*
+      - [wikipedia](http://en.wikipedia.org/wiki/Mass_assignment_vulnerability)
+- if invalid info, then **update_attributes** will return false
+  - render 'edit' page
+  - add **flash.now[:error]**
+- all tests are green
+
+### 9.1.3 | Successful edits
+- image edit done with gravatar
+- tests
+  - define new name and email
+  - fill in form with new info and current password
+  - click save
+  - verify that profile page shows
+  - verify success flash
+  - verify user is still signed in
+  - verify that user name and email have been updated
+- need to use **reload** method to reload user info from db
+- fill in **update** action for successfuly model update
+  - flash success method
+  - redirect to user instance (profile page)
+  - note, the redirect takes care of the flash.now vs flash issue
+- edits require password with every update, annoying but more secure
+- all specs pass
+- functionality complete
+
+
+## 9.2 | Authorization
+- *authentication* allows us to identify users, *authorization* allows us to control what they do
+- edit and update are funcitonally complete, bit security flaws
+- signed in users can update ANY user's info
+- non-signed in users can access edit and update
+- will prevent signed in users from updating anyones info but they're own
+- will redirect non-signed in users to sign in page (plus helpful message)
+
+### 9.2.1 | Requiring signed in users
+- restrict access to **edit** and **update** actions
+- users who are not signed in, redirect to sign in page
+- user *patch* request to access **update** action
+  - no way to access via browser directly
+- when user HTTP request directly, have access to *response* obj
+- user *before filter*, **before_action**
+  - defaults for all actions
+  - use :only filter to restrict to certain actions
+  - in our case **edit** and **update**
+- redirect offers shortcut for populating **:notice** flash
+  - assigned via options hash
+  - does not work for **:error** and **:success**
+
+### 9.2.2 | Requiring the right user
+- ensure that correct user is accessing **edit** and **update**
+- will do this with another before filter which checks for the correct user
+- will not use capybara for tests
+  - access response objects directly
+  - submit get and patch requests to edit and update, respectively
+- since users should not be attempting this, redirect to root url, not signin
+- can pass options hash into factory girl, which overrides default attr values
+- before action, **correct_user**
+  - declare instance variable, using lookup with id from params hash
+  - verify if current_user?
+  - potential redirect to root url
+- add **current_user?** to Sessions helper
+  - does comparison of current user and user in arg
+- we can remove the declaration of this instance var in **edit** and **update** actions
+
+### 9.2.3 | Friendly forwarding
+- if non-signed in user tries to access restricted page (like edit)
+  - redirects to signin page
+  - after successful signin, redirects to root
+  - would like to make it redirect to original protected page
+  - this may enevitably send the user to root if it's not their page
+- testing
+  - create test user
+  - visit edit path for that user
+  - *redirects to signin page
+  - enter valid credentials
+  - click signin
+  - ensure you're on the edit page for that user
+- in order to accomplish this, need to store intended location
+- we will store this in the session variable (similar to cookies variable, provided by Rails)
+- in Sessions Helper
+  - **store_location**
+    - stash request url in session variable
+    - only return url for GET requests
+      - otherwise GET request would get sent to a url expecting PUT, PATCH, DELETE; BAD!
+  - **redirect_back_or**
+    - redirects to stored url or default, then deletes stored url
+- call **store_location** in before filter, before redirect to "please sign in"
+- call **redirect_back_or** when creating a session, passing **user** as the default
+
+## 9.3 | Showing all users
+- will fill in **index** action for User, which shows all users
+- seed db with data
+- paginate user output
+
+### 9.3.1 | User index
+- **show** pages available to all users (signed in and not)
+- **index** or all user page only available to signed in users
+- write test to ensure that non-signed in user cannot access **users_path**
+  - part of auth tests
+- in controller
+  - define **index** method
+  - add this actiont to before filter **signed_in_user**
+- write tests for signed in user
+  - user factory to create three unique users
+  - sign in with first users
+  - visit **users_path**
+  - make sure page has 'All users' content and title (correct page)
+  - make sure that all users created are shown within *li* elements
+  - in user pages spec
+  - NOTE: if subject is set to page, then custom matchers, which expect page, do not seem to work (page undef)
+- back to users controller
+  - fill in **index** action, assigning **User.all** to an instance var
+  - this is a bad idea in general (i.e. a lot of users), will revisit when paginating
+- create *index* view
+  - provide title and h1
+  - create an unordered list
+  - fill *ul* with *li*s
+    - each list item has gravatar image (using helper) and link to profile page with user name as text
+- add some SCSS
+- add url to **users_path** to header for signed in users
+- all green and it works ... but it's a ghost town up in here
+
+### 9.3.2 | Sample users
+- will create rake task to populate the db with example users
+- will use Faker gem to create names
+- rake task:
+  - defined by *namespace* (in our case **db**)
+  - creates 1 sample users and 99 fakes
+  - pass the environment to the task so it has access to db
+  - user **User.create!** which throws on invalid input (instead of just returning false)
+    - noisier
+  - run the following commands to clean, seed and rebuild db
+
+      bundle exex rake db:reset       # clear db
+      bundle exex rake db:populate    # this is our task!
+      bundle exex rake test:prepare   # rebuild test db
+
+### 9.3.3 | Pagination
+- too many (all) results returned on index page
+- will use *will_paginate* and *bootstrap-will_paginate* gems for pagination and styling
+- write tests for index page
+  - check for div with pagination class (will not test gem itself)
+  - verify that all users are present (pagination only, not all users)
+- we will need to create a lot of users at once -> FactoryGirl sequences
+  - sequence takes a symbol for the corresponding attr and a block with one var
+    - e.g. `sequence(:name) { |n| "Person_#{n}" }`
+  - this allows us to assign an index with each sample user (i.e. "Person_1", "Person_2", etc.)
+  - block var is automatically incremented
+- will use **before(:all)** in spec tests for pagination
+  - passing the **:all** symbol as an arg tells rspec to run this *once* before all tests in block
+  - performance since recreating would be redundant
+  - complimentary **after(:all)** to delete db entries
+ - in **Users controller index** action
+  - update to return only one page of users instead of all
+  - take page out of params
+  - defaults to page 1 (will break if "", added default yourself)
+- in **user/index** view
+  - call the **will_paginate** before and after the **ul** containing the list of users
+    - automatically finds **@users** (since we in the users/index view)
+    - adds markup to paginate through users
+    - nil defaults to first page
+    - expects users to be fetched using the **paginate** method
+
+### 9.3.4 | Partial refactoring
+- in **index** partial, we can call **render** on the *user* variable directly
+- Rails knowns to look for a partial with the name **_user**
+- can even call **render** on the collection of users, **@users**
+- Rails will iterate through collection and call render on the **_user** partial for each
+- refactoring should not break spec tests, which test functionaliy
+
+
+## 9.4 | Deleting Users
+- **destroy** is the last REST action left
+- will define **destroy** action to delete users
+- will first create class of user, *admin*, who are the only ones authorized to do so
+
+### 9.4.1 | Administrative users
+- will add a boolean column to user table to designate admins
+  - will automatically create **admin?** boolean method to test if a user is an admin
+- write tests on user model
+  - should respond to **admin**
+  - admin should be false by default
+  - can toggle to true (**user.toggle!(:admin)**)
+- rspec convention `it {should be_admin}`, implies **admin?** method exists
+- write migration for adding this column to db, setting default to false
+  - default not necessarily needed, since default is **nil**, which is false
+  - this is more explicit, which is good
+- run migration and rebuild test db
+- update **populate** rake task to build 1 admin user and 99 non-admins
+- Revisiting strong parameters
+  - without protection, anyone can submit a patch request with admin=true
+  - huge security problem
+  - essential to pass only safe-to-edit params
+  - do not include admin here, this will deny web requests to update this attr
+  - good idea to write a tests for this, but left as an exercise
+
+### 9.4.2 | the `destory` action
+- need to add destroy links and implement destroy action
+- only add destroy links to index page for admins and not their own profile
+- add admin block to user factory to set admin to true
+  - create admin: `FactoryGirl.create(:admin)`
+- ordinary users should not see delete links
+- tests
+  - ordinary users should not see delete links
+  - admin users should see delete links
+  - admin should not see a delete link for themselves
+  - clicking any delete link should reduce count by 1
+- tests use **match: :first** which tells Capybara to use first match
+- update the view
+  - add condition to check for admin
+  - if admin show link for delete which uses **method: :delete**
+- remember, the browser cannot issue delete request so Rails fakes it in js
+  - this means that DELETE will not work w/o javascript enabled
+  - can fake it with a POST and a form
+  - see Railscast for more info
+- in controller
+  - add **:delete** to **signed_in_user** before filter
+  - define destroy method
+    - find user by id
+    - call destroy on user
+    - add a flash success message
+    - redirect to users_user
+- Problem: any user can issue a DELETE request to delete any other user!
+  - this can be done from the command line using CURL
+- add to auth page tests
+  - if non-admin calls delete
+  - expect response to redirect to root url
+  - similar to validation for **patch**
+- still has flaw that admin can delete themselves, although not through ui
+  - they got whats coming to them
+- define **admin_user** in before filter in *users controller*
+  - redirect to root url unless current user is admin
+
+## 9.5 | Consclusion
+- users can now:
+  - sign up
+  - sign in/out
+  - edit their info
+  - see user profile pictures
+  - see index page of all users
+- ch 10: Twitter-like micro posts
+- ch 11: status feed of posts from followed users
+- these chapters will use **has_many** and **has_many through**
+- merge branch, push to heroku
+
+## 9.6 | Exercises
+1) make sure updating to admin does not work
+  - first add :admin to users_param to allow it to be set (be sure to remove!)
+  - in tests
+    - create a params hash user: admin, pw, pw_conf
+    - sign in user
+    - submit a patch request, using the **user_path(user)** for route, and passing in params
+    - reload user and make sure that user is NOT admin
+  - removing admin from users_params should allow test to pass
+
+2) update 'change' link nexto to Gravatar image to open in a new tab or window
+  - use **link_to** helper
+  - set target to '_blank'
+  - Refs:d
+    - http://stackoverflow.com/questions/12133894/open-link-in-new-tab-with-link-to
+    - http://api.rubyonrails.org/classes/ActionView/Helpers/UrlHelper.html
+
+3) Add test to make sure that Profile and Settings do not appear when not signed in
+  - within descript invalide data
+    - add check that settings and profile links should not be present
+    - refactor checks into a rpsec matcher
+    - within matcher, add check for user var and default to {} if not present
+
+4) use **sign_in** in as many places as possible...didn't really find anywhere it was already used
+  - 'attempting to access a protected page' could use it, but want to ensure redirect is happening
+
+5) refactor sign up and edit form to use fields partial
+  - text on confirmation field needs to be resolved between two pages
+
+6) redirect signed in users to root url when accessing **new** and **create** actions
+  - define new test within *user page specs* for the signup page
+  - create and signin test user (no capybara option)
+  - make sure that get to *signup_path* and post to *users_path* both redirect to root_url
+  - add before filter to *users controller* to check for signed in user using **signed_in?** helper
+
+7) learn about the **request** object TOOD
+  - http://api.rubyonrails.org/v4.0.0/classes/ActionDispatch/Request.html
+
+8) verify that friendly forwarding forgets intended destination after first log in
+  - within test to access protected pages
+    - within after sign in test
+    - sign out user (use click_link 'Sign out', solution in book is not correct)
+    - sign user back in
+    - verify that user is brought to profile page and not the edit page
+
+9) modify **destroy** action so that admins cannot delete themselves
+  - add a non-capybara spec test to send DELETE request to admin url and check count
+  - add logic in destroy action to check if requested user is the current user
+  - if so flash error and do not destory user
+
 
 
 
