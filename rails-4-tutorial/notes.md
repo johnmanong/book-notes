@@ -30,9 +30,33 @@
 - create new branch 'ch10-user-microposts'
 
 ## 10.1 |  A Micropost model
-- 
+- microposts data model will include validations and associations with the user data model
+- unlike user model:
+  - fully tested
+  - default ordering
+  - automatic destruction if parent user is destroyed
 
+### 10.1.1 | The basic model
+- model only needs two attributes:
+  - content
+  - user id (to associate user/owner with post)
+- generate model: `rails g model Micropost content:string user_id:integer`
+- remove generatd factory (will do by hand): `rm -f spec/factories/microposts.rb`
+  - mine did not
+- goal: get all posts for user in reverse chrono order
+  - add index for microposts on user id and created at
+  - add to migration: `add_index :microposts, [:user_id, :created_at]`
+  - creates *mulitple key index*
+  - Active Records uses both keys simultaneously
+  - `t.timestamps` creates updated_at and created_at columns
+- basic tests for model
+  - verify responds to `content` and `user_id` attrs
+- to get tests to pass, migrate and prepare db
+  - `bundle exec rake db:migrate`
+  - `bundle exec rake test:prepare`
+- tests should pass, althought not written in "rails way"
 
+### 10.1.2 | The first validation
 
 
 
