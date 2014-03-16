@@ -194,7 +194,19 @@
   - create a microposts instance var
   - use `paginate` through the `@user` association
 
+### 10.2.2 | Sample microposts
+- update `db:populate` rake task to include some microposts
+  - update the `lib/tasks/sample_data.rake`
+  - for first 6 users (`User.all(limit: 6)`)
+    - add 50 microposts
+    - use `Faker::Lorem.sentence(5)` to generate content
+- update the data base
+  - reset database: `bundle exec rake db:reset`
+  - populate database: `bundle exec rake db:populate`
+  - prepare test db: `bundle exec test:prepare`
+- add css to `custom.css.scss` for micropost styling
 
+## 10.3 | Manipulating microposts
 
 
 
