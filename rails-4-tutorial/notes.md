@@ -57,7 +57,108 @@
 - tests should pass, althought not written in "rails way"
 
 ### 10.1.2 | The first validation
+- need to validate Micropost model
+  - user id to indicate which user wrote the post
+  - correct way is to use Active Record *associations*
+  - for now we will write the test, get it to pass and refactor in the next section
+- testing
+  - set user id to nil
+  - make sure it should be invalid
+  - existing case add condition that it should be valid
+- tests will be red
+  - add validation via *validates* for the presence for user_id in the Micropost model
 
+### 10.1.3 | User/Micropost associations
+- each micropost belongs to one user
+- each user can have many microposts
+- will use *belongs_to* and *has_many* **associations** respectively
+- Rails generates the following methods for these assciations
+
+| Method                       | Purpose |
+------------------------------------------
+|`micropost.user`              | Return the User obj associated with post. |
+|`user.microsposts`            | Return an array of Microposts of user's microposts (returns empty array) (returns ActiveRecrod::Asscociations::CollectionProxy) |
+|`user.microposts.create(arg)` | Create a microposts and set user_id field to user.id |
+|`user.microposts.create!(arg)`| Create a micropost and save to db (?)(exception on failure) |
+|`user.microposts.build(arg)`  | Return a new Micropost obj (user_id = user.id) |
+
+- the conanical way to build a micropost is through the user
+  - instead of >> use this:
+    - Micropost.create  >> user.microposts.create
+    - Micropost.create! >> user.microposts.create!
+    - Micropost.new     >> user.microposts.build
+  - user id is automatically assigned
+- update Micropost model spec
+  - use build()
+  - check that it responds to :user
+  - check that user is the equal to the user we created it with
+- update user model spec (more to come in next section)
+  - check that it responds to :microposts
+- update Microposts model
+  - `belongs_to :user`
+- update User model
+  - `has_many :microposts`
+- all specs should be green
+
+
+### 10.1.4 | Micropost refinements
+- previously tested just existence of microposts attr on user
+- add *ordering* and *dependency*
+- verify that `user.microposts` returns an array
+- create a micropost factory to *factories.rb* via FactoryGirl
+
+#### default scope
+- by default, no guarantees about ordering of `user.microposts`
+- testing
+  - create two posts
+    - one a day ago another an hour ago
+    - Factory Girl allows us to set *created_at* attr, which is automatic from Active Record
+    - most dbs order by id, so these would be returned in wrong order
+    - use `let!` to create variables immediately and set ids
+      - `let` variables are lazy, not created until used
+  - use `to_a` to convert Active Record *collection proxy* returned by `user.microposts`
+- update User model
+  - add `default_scope`
+  - pass `order` argument with sql syntax order condition
+    - `default_scope -> { order('created_at DESC') }`
+  - *DESC* or descending order will return posts in reverse chronological order
+- in Rails 4, all scopes take anonymous function which return criteria for scope
+  - *lazy evaluation*, scope is evaluated as needed
+  - *Proc* (procedure) or *lambda* function
+    - takes a block
+    - evaluates with the `call` method
+
+#### dependent destory
+- currently have the ability to destroy users
+- want to destroy posts created by users when destroyed
+- to test, we will destory the user and verify the associated posts are no longer in the db
+- steps to tests
+  - save a local copy of users microposts via `to_a`
+  - destroy user
+  - make sure local copy is not empty (safety check)
+  - iterate over each micropost
+    - user `where` to verify they are no in the db and empty obj is returned
+    - can also use `find` but we need to check for an *ActiveRecord::RecordNotFound* exception is raised
+- updating user model
+  - add option to `has_many` associated method
+    - `has_many :mircoposts, dependent: :destory`
+  - this options specificies that each micro post associated with user should be destroyed with user
+- all tests should be green
+
+### 10.1.5 | Content validations
+- add validations for tentent
+  - must be present
+  - can be no longer than 140 char (it's micro afer all)
+- update Micropost model spec
+  - test for content blank
+  - test for content which is too long
+    - use string multiplication
+- update Micropost model
+  - add `validates` for content
+    - `validates :content, presence: true, length: { maximum: 140 }`
+- all tests passing
+
+## 10.2 | Showing microposts
 
 
 
