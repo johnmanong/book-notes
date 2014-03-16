@@ -159,6 +159,45 @@
 - all tests passing
 
 ## 10.2 | Showing microposts
+- no way to create posts through web
+- will test display of posts
+- ala Twitter, will show posts on user `show` page, not some index page
+- will add sample data for now to display
+
+### 10.2.1 | Augmenting the user show page
+- use factory to create posts for user, verify contents of user profile page reflect post
+- user `let!` to create posts immediately
+- test user profile page, in microposts block
+  - check for content of both posts
+  - check that the count is on the page
+- calling count through association
+  - does not pull all microposts from db
+  - calls count directly on db
+  - if cound is still a bottleneck, can use [counter cache](http://railscasts.com/episodes/23-counter-cache-column)
+- update the show view
+  - user `any?` to check for microposts before rendering dom
+  - use microposts count to header of section
+  - add ordered list
+  - render `@microposts` instance var
+    - render each micropost in `@microposts` and use partial
+    - looks for a partial, `microposts/_micropost.html.erb`
+    - did this for user as well
+  - call `will_paginate` on `@microposts` instance var
+    - before did not need instance var
+    - assumes there is an instance var named after current controlle (`@users`)
+    - instance var should be of type ActiveRecord::Relation (sec 9.3.3)
+- add a mircoposts partial
+  - `app/views/microposts/_micropost.html.erb`
+  - render content
+  - uses `time_ago_in_words` helper to render human readable created_at
+- update the Users controller, show action
+  - create a microposts instance var
+  - use `paginate` through the `@user` association
+
+
+
+
+
 
 
 
