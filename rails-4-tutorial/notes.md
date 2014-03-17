@@ -207,7 +207,32 @@
 - add css to `custom.css.scss` for micropost styling
 
 ## 10.3 | Manipulating microposts
+- interface for creating/destorying microposts through the web
+- will use form to create micropost resource
+- first hint of *status feed*
+- most Micropost manipulation through Users and StaticPages controllers
+  - only need create and destory actions
 
+- microcontroller routes
+| HTTP request | URL | Action | Purpose |
+-----------------------------------------
+| `POST`| /microposts | `create` | create a new micropost |
+| `DELETE`| /microposts/1 | `destroy` | destory micropost with id 1 |
+
+### 10.3.1 | Access control
+- both `create` and `destory` actions should require user to be signed in
+- will add test later to ensure that user only delets their own
+- add rspec tests
+  - post to "microposts_path" to hit `create`
+  - delete to "micropost_path", passing in a micropost Factory Girl to hit `delete`
+  - ensure that the response is redirected to sign in page (both cases)
+- refactor `signed_in_user` out of the Users controller into the Sessions helper
+  - gives access to Users and Microposts controllers
+- user a before filter and check for signed in user (`before_action :signed_in_user`)
+  - note that if additional actions were added, may have to specify which actions filter applies to
+- all tests should pass
+
+### 10.3.2 | Creating Microposts
 
 
 
