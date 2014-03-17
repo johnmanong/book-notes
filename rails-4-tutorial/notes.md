@@ -233,9 +233,56 @@
 - all tests should pass
 
 ### 10.3.2 | Creating Microposts
+- following Twitter convention, creating a new post will be on homepage
+  - only for signed in user
+  - not at seperate path (microposts/new) like user
+- serve different homepage based on user sign in status
+- generate integration test: `rails generate integration_test micropst_pages`
+  - test similar to user page tests
+  - subject = page
+  - create user with factor girl
+  - sign in user before each test
+  - describe micropost creation
+    - visit root for each test
+    - test for invalid info
+      - no info
+      - check that after click micropost count does not change
+      - make sure error messages display
+    - test for valid info
+      - fill in content field with text
+      - check that after click micropost count changes by 1
+- update the `create` action for the Mircoposts controller
+  - use of strong parameters via `micropost_params` allows only content to be edited through the web
+  - create micropost instance var by calling build on user association
+  - attempt to save and check result
+  - if success
+    - flash success
+    - redirect to root
+  - else if failure
+    - render 'static_pages/home'
+- update static_pages/home view
+  - add check for signed in
+    - if signed in render user into and form
+    - if not, render original homepage
+  - add shared partials
+    - user info should have gravatar, link to user and number of posts
+    - micropost form should have error messages, text area for content and submit button "Post"
+  - update how `error_messages.html.erb` is rendered
+    - originally written to anticipate user instance var
+    - now needed to be called on user and microposts object
+    - the form var `f` can access the object via `f.object` (either `@user` or `@micrpost`)
+    - pass `f.object` in as a hash with key *object*
+    - update partial to use `object` instead of `@user`
+    - update references to rendering this partial, passing in `object: f.object`
+      - `users/new`
+      - `users/edit`
+- update StaticPagesController
+  - view expects micropost instance var
+  - if user is signed in
+    - build one by calling build on `current_user` association
+- all specs passing, but not complete
 
-
-
+### 10.3.3 | A proto-feed
 
 
 #############################################################################
