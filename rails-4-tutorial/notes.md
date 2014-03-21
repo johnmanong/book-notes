@@ -283,6 +283,39 @@
 - all specs passing, but not complete
 
 ### 10.3.3 | A proto-feed
+- will start with basic feed of signed in user's posts on homepage
+- ch 11 will introduce a feed of other users posts
+- add `feed` method to User model
+- add tests for `feed` method
+  - verify that user's posts are present
+  - verify that other users' posts are not present
+  - use `include?` method to check if post is in feed array
+- `feed` method implementation
+  - instance method
+  - get all Micropost where the user_id matches the current users id
+  - could use `microposts` associated for same functionality
+    - this could resist refactoring when we update the feed
+  - `.where(user_id = ?)` the question mark ensures the param passed in is escaped
+    - good practice
+    - avoid SQL injection
+- update static pages test
+  - create some microposts
+  - for signed in user, make sure that the page has an li + post id on page
+- update `home` action in StaticPagesController to add @feed_items
+- create partials
+  - partial for feed itself
+    - seperate partial for feed items
+    - will use `collection:` param to pass colleciton of feed items
+    - this will call partial on each item in the collection
+  - partial for feed item
+- update home parital to render feed
+- ISSUE: if creating a new micropost fails
+  - never redirects to root, does not hit static pages controller
+  - partial expects feed instance var
+  - init feed instance var to empty array in failing branch of `create` action in mircoposts controller
+
+### 10.3.4 | Destorying microposts
+
 
 
 #############################################################################
