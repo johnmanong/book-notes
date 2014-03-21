@@ -315,6 +315,38 @@
   - init feed instance var to empty array in failing branch of `create` action in mircoposts controller
 
 ### 10.3.4 | Destorying microposts
+- will add ability to delete a micropost
+- add delete links to posts
+- delete links will only work for mircoposts created by current user
+- update partials
+  - check if current user is the same user on the micropost
+  - add link with delete method if so
+  - update feed item partial and micropost partial
+- write tests
+  - check that clicking delete link changes the count by 1
+- update microposts controller
+  - add correct user method to verify that current user is micropost author
+  - add before filter to destory action with correct user method
+  - can use `find_by` and check for nil or use `find` and catch exception
+
+
+## 10.4 Conclusion
+- done with micropost resource
+- need to add social layer in next section
+- commit to master
+- push to heroku
+
+
+## 10.5 Exercises
+1.
+2.
+3. (done)
+4. 
+5. (done)
+6.
+7. 
+
+
 
 
 
