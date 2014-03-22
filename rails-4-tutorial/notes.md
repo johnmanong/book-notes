@@ -122,6 +122,30 @@
   - self is optional
 
 ### 11.1.5 | Followers
+- add `user.followers` method
+  - all required info is in the Relationship table
+  - same as followed_users, but the roles of follower_id and followed_id are switched
+- add tests
+  - add respond to tests for `:reverse_relationships` and `followers`
+  - for followed user, assign other_user as subject and test @user is in followers
+  - should be reversed roles as test for followed users
+- will not create new db table for reverse relationship
+  - simulate table by passing followed_id as the primary/foreign key
+- add associations
+  - when declaring the association, must assign 'Relationship' class explicitly
+  - can leave off followers as source, since Rails will correctly assume foreign key follower_id
+  - followers association should be similar but opposite to followed_users, but uses revser relationship
+- all tests should pass
+
+
+## 11.2 | A web interface for followers
+- will implement basic interface for following/unfollowing
+- seperate pages to should followers and following
+
+### 11.2.1 | Sample following data
+
+
+
 
 
 #############################################################################
