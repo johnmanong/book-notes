@@ -12,13 +12,116 @@
 # Chapter 11 | title #############################################################################
 
 #### Topics:
+- following users
+- relationship model
+- web interface for following users
+- status feed
 
 #### References:
+- [when to use rspec let](http://stackoverflow.com/questions/5359558/when-to-use-rspec-let)
 
+- this chapter will add social layer to app
+- users can follow and unfollow other users
+- staus feed includes own and following users posts
+- views to display followers and following
+- model relationships betwen users
+- introduce ajax
+- some ruby/mysql trickery will be involved to make status feed
 
+## ch 11.1 | The Relationship Model
+- naive aproach: a user `has_many` followed users and `has_many` followers
+- will be fixed by `has_many through`
 
+### ch 11.1.1 | A problem with the data model (and a solution)
+- there is a concept of the follower and the followed
+- default Rails pluralization results in 'followeds' which is awkward
+  - can call following, but that has oppoisite meaning
+  - will use 'followed_users' and `user.followed_users` array
+- simple `has_many` for followed users
+  - each row of resulting followed users table would have all user info
+  - this includes name, pw etc
+  - very redundant
+  - followers would similarly need another table
+  - maintence is a nightmare, user info in up to 3 tables and multiple rows
+- underlaying abstraction, in REST context: relationship
+  - the relationship between users is what is created and destroyed
+  - user `has_many :relationships` and hs many `followed_users` *through* relationships
+  - can store ids only in relationships table, and get user info from user table
+- getting users info
+  - can get array of user ids from relationships table then lookup each user
+  - Rails provides method: `has_many through`
+  - e.g. `has_many :followed_users, through: :relationships, source: :followed`
+- generate relationship model
+  - `$ rails generate model Relationship follower_id:integer followed_id:integer`
+  - remove factory if needed: `spec/factories/relationship.rb`
+- update resulting migration to add indexes
+  - follower_id
+  - followed_id
+  - follower_id, followed_id, enforce unique so users can't follow more than once
+- run migration and update test db
 
+### 11.1.2 | User/Relationship associations
+- a user `has_many` relationships
+- a relationship `belongs_to` both a follower and a followered user
+- build a new relationship: `user.relationships.build(followed_id: ... )`
+- start with basic validity test on relationship
+  - create follower and followed uses
+  - create relationship as mentioned above
+  - check for should be valid
+  - use let instead on instance var
+- add test to user model to check for relationship
+  - verify that user responds to relationship attr
+- micropost table has a user id to identify users
+  - this is known as a *foreign key*
+  - foreign key for a User model object is `user_id`
+- Rails infers foreign keys by default
+  - converts class name to underscore
+    - e.g. SomeClass -> some_class
+  - checks for id named `<class>_id`
+- in the Relationship/User association, we cannot rely on Rails default inference of the foreign key
+  - in this case the foreign key is `follower_id` not `user_id`
+  - in User model when declaring association, pass in param for foreign key
+  - add `dependent: :destory` since relationships should be deleted when the user is deleted
+- add tests for Relationship follower methods
+  - check that relationship responds to follower and followed attrs
+  - check that those attrs reference created objs
+- update Relationship model
+  - add belongs to association for follower and followed
+  - fk is inferred from symbols
+    - e.g. :follower -> follower_id
+  - supply class name 'User' since there is not a follower or followed class
+- all tests should be green
 
+### 11.1.3 | Validations
+- add tests for validation
+  - if either follower or followed id is missing should not be valid
+- add validation to Relationship model
+  - `validats :follower_id, presence:true`
+
+### 11.1.4 | Followed users
+- start by implementing `followed_users`
+- default implementation of `has_many through` would expect:
+  - `has_many :followeds, through: :relationships`
+  - this would get array using `followed_id` in the `relationships` table
+  - this is awkward
+- will use 'followed users' as plural of 'followed'
+  - `user.followed_users`
+  - overwrite default by using `:source` parameter
+- update User model
+  - `has_many :followed_users, through: :relationships, source: :followed`
+- introduce helper methods in user model
+  - `follow!(other_user)`
+    - should always work (like `save!`)
+    - will throw if failure
+  - `following?(other_user)`
+    - boolean
+  - `unfollow!(other_user)`
+    - unfollow a user
+- update tests to anticipate methods
+- update user model
+  - self is optional
+
+### 11.1.5 | Followers
 
 
 #############################################################################
