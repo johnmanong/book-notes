@@ -19,6 +19,7 @@
 
 #### References:
 - [when to use rspec let](http://stackoverflow.com/questions/5359558/when-to-use-rspec-let)
+- [Rails routing](http://guides.rubyonrails.org/routing.html)
 
 - this chapter will add social layer to app
 - users can follow and unfollow other users
@@ -143,6 +144,15 @@
 - seperate pages to should followers and following
 
 ### 11.2.1 | Sample following data
+- will update `db:populate` rake task to add relationships
+- refactor into helper methods to make users, posts and relationships
+- make relationships method
+  - get all users
+  - get first user
+  - get first user to follow users 3 - 51
+  - get users 4 - 41 to follow user
+
+### 11.2.2 | Stats and a follow form
 
 
 
