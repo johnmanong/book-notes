@@ -9,342 +9,13 @@
 
 
 
+# Chapter 11 | title #############################################################################
+
+#### Topics:
+
+#### References:
 
 
-# Chapter 10 | User Microposts #############################################################################
-
-# Topics:
-- micropost model
-- showing microposts
-- manipulating microposts
-
-# References:
-
-
-
-#Notes
-
-- ch9 completed REST actions for users
-- this chapter will add the user microposts resource
-- associate user and microposts data models using `has_many` and `belongs_to`
-- create new branch 'ch10-user-microposts'
-
-## 10.1 |  A Micropost model
-- microposts data model will include validations and associations with the user data model
-- unlike user model:
-  - fully tested
-  - default ordering
-  - automatic destruction if parent user is destroyed
-
-### 10.1.1 | The basic model
-- model only needs two attributes:
-  - content
-  - user id (to associate user/owner with post)
-- generate model: `rails g model Micropost content:string user_id:integer`
-- remove generatd factory (will do by hand): `rm -f spec/factories/microposts.rb`
-  - mine did not
-- goal: get all posts for user in reverse chrono order
-  - add index for microposts on user id and created at
-  - add to migration: `add_index :microposts, [:user_id, :created_at]`
-  - creates *mulitple key index*
-  - Active Records uses both keys simultaneously
-  - `t.timestamps` creates updated_at and created_at columns
-- basic tests for model
-  - verify responds to `content` and `user_id` attrs
-- to get tests to pass, migrate and prepare db
-  - `bundle exec rake db:migrate`
-  - `bundle exec rake test:prepare`
-- tests should pass, althought not written in "rails way"
-
-### 10.1.2 | The first validation
-- need to validate Micropost model
-  - user id to indicate which user wrote the post
-  - correct way is to use Active Record *associations*
-  - for now we will write the test, get it to pass and refactor in the next section
-- testing
-  - set user id to nil
-  - make sure it should be invalid
-  - existing case add condition that it should be valid
-- tests will be red
-  - add validation via *validates* for the presence for user_id in the Micropost model
-
-### 10.1.3 | User/Micropost associations
-- each micropost belongs to one user
-- each user can have many microposts
-- will use *belongs_to* and *has_many* **associations** respectively
-- Rails generates the following methods for these assciations
-
-| Method                       | Purpose |
-------------------------------------------
-|`micropost.user`              | Return the User obj associated with post. |
-|`user.microsposts`            | Return an array of Microposts of user's microposts (returns empty array) (returns ActiveRecrod::Asscociations::CollectionProxy) |
-|`user.microposts.create(arg)` | Create a microposts and set user_id field to user.id |
-|`user.microposts.create!(arg)`| Create a micropost and save to db (?)(exception on failure) |
-|`user.microposts.build(arg)`  | Return a new Micropost obj (user_id = user.id) |
-
-- the conanical way to build a micropost is through the user
-  - instead of >> use this:
-    - Micropost.create  >> user.microposts.create
-    - Micropost.create! >> user.microposts.create!
-    - Micropost.new     >> user.microposts.build
-  - user id is automatically assigned
-- update Micropost model spec
-  - use build()
-  - check that it responds to :user
-  - check that user is the equal to the user we created it with
-- update user model spec (more to come in next section)
-  - check that it responds to :microposts
-- update Microposts model
-  - `belongs_to :user`
-- update User model
-  - `has_many :microposts`
-- all specs should be green
-
-
-### 10.1.4 | Micropost refinements
-- previously tested just existence of microposts attr on user
-- add *ordering* and *dependency*
-- verify that `user.microposts` returns an array
-- create a micropost factory to *factories.rb* via FactoryGirl
-
-#### default scope
-- by default, no guarantees about ordering of `user.microposts`
-- testing
-  - create two posts
-    - one a day ago another an hour ago
-    - Factory Girl allows us to set *created_at* attr, which is automatic from Active Record
-    - most dbs order by id, so these would be returned in wrong order
-    - use `let!` to create variables immediately and set ids
-      - `let` variables are lazy, not created until used
-  - use `to_a` to convert Active Record *collection proxy* returned by `user.microposts`
-- update User model
-  - add `default_scope`
-  - pass `order` argument with sql syntax order condition
-    - `default_scope -> { order('created_at DESC') }`
-  - *DESC* or descending order will return posts in reverse chronological order
-- in Rails 4, all scopes take anonymous function which return criteria for scope
-  - *lazy evaluation*, scope is evaluated as needed
-  - *Proc* (procedure) or *lambda* function
-    - takes a block
-    - evaluates with the `call` method
-
-#### dependent destory
-- currently have the ability to destroy users
-- want to destroy posts created by users when destroyed
-- to test, we will destory the user and verify the associated posts are no longer in the db
-- steps to tests
-  - save a local copy of users microposts via `to_a`
-  - destroy user
-  - make sure local copy is not empty (safety check)
-  - iterate over each micropost
-    - user `where` to verify they are no in the db and empty obj is returned
-    - can also use `find` but we need to check for an *ActiveRecord::RecordNotFound* exception is raised
-- updating user model
-  - add option to `has_many` associated method
-    - `has_many :mircoposts, dependent: :destory`
-  - this options specificies that each micro post associated with user should be destroyed with user
-- all tests should be green
-
-### 10.1.5 | Content validations
-- add validations for tentent
-  - must be present
-  - can be no longer than 140 char (it's micro afer all)
-- update Micropost model spec
-  - test for content blank
-  - test for content which is too long
-    - use string multiplication
-- update Micropost model
-  - add `validates` for content
-    - `validates :content, presence: true, length: { maximum: 140 }`
-- all tests passing
-
-## 10.2 | Showing microposts
-- no way to create posts through web
-- will test display of posts
-- ala Twitter, will show posts on user `show` page, not some index page
-- will add sample data for now to display
-
-### 10.2.1 | Augmenting the user show page
-- use factory to create posts for user, verify contents of user profile page reflect post
-- user `let!` to create posts immediately
-- test user profile page, in microposts block
-  - check for content of both posts
-  - check that the count is on the page
-- calling count through association
-  - does not pull all microposts from db
-  - calls count directly on db
-  - if cound is still a bottleneck, can use [counter cache](http://railscasts.com/episodes/23-counter-cache-column)
-- update the show view
-  - user `any?` to check for microposts before rendering dom
-  - use microposts count to header of section
-  - add ordered list
-  - render `@microposts` instance var
-    - render each micropost in `@microposts` and use partial
-    - looks for a partial, `microposts/_micropost.html.erb`
-    - did this for user as well
-  - call `will_paginate` on `@microposts` instance var
-    - before did not need instance var
-    - assumes there is an instance var named after current controlle (`@users`)
-    - instance var should be of type ActiveRecord::Relation (sec 9.3.3)
-- add a mircoposts partial
-  - `app/views/microposts/_micropost.html.erb`
-  - render content
-  - uses `time_ago_in_words` helper to render human readable created_at
-- update the Users controller, show action
-  - create a microposts instance var
-  - use `paginate` through the `@user` association
-
-### 10.2.2 | Sample microposts
-- update `db:populate` rake task to include some microposts
-  - update the `lib/tasks/sample_data.rake`
-  - for first 6 users (`User.all(limit: 6)`)
-    - add 50 microposts
-    - use `Faker::Lorem.sentence(5)` to generate content
-- update the data base
-  - reset database: `bundle exec rake db:reset`
-  - populate database: `bundle exec rake db:populate`
-  - prepare test db: `bundle exec test:prepare`
-- add css to `custom.css.scss` for micropost styling
-
-## 10.3 | Manipulating microposts
-- interface for creating/destorying microposts through the web
-- will use form to create micropost resource
-- first hint of *status feed*
-- most Micropost manipulation through Users and StaticPages controllers
-  - only need create and destory actions
-
-- microcontroller routes
-| HTTP request | URL | Action | Purpose |
------------------------------------------
-| `POST`| /microposts | `create` | create a new micropost |
-| `DELETE`| /microposts/1 | `destroy` | destory micropost with id 1 |
-
-### 10.3.1 | Access control
-- both `create` and `destory` actions should require user to be signed in
-- will add test later to ensure that user only delets their own
-- add rspec tests
-  - post to "microposts_path" to hit `create`
-  - delete to "micropost_path", passing in a micropost Factory Girl to hit `delete`
-  - ensure that the response is redirected to sign in page (both cases)
-- refactor `signed_in_user` out of the Users controller into the Sessions helper
-  - gives access to Users and Microposts controllers
-- user a before filter and check for signed in user (`before_action :signed_in_user`)
-  - note that if additional actions were added, may have to specify which actions filter applies to
-- all tests should pass
-
-### 10.3.2 | Creating Microposts
-- following Twitter convention, creating a new post will be on homepage
-  - only for signed in user
-  - not at seperate path (microposts/new) like user
-- serve different homepage based on user sign in status
-- generate integration test: `rails generate integration_test micropst_pages`
-  - test similar to user page tests
-  - subject = page
-  - create user with factor girl
-  - sign in user before each test
-  - describe micropost creation
-    - visit root for each test
-    - test for invalid info
-      - no info
-      - check that after click micropost count does not change
-      - make sure error messages display
-    - test for valid info
-      - fill in content field with text
-      - check that after click micropost count changes by 1
-- update the `create` action for the Mircoposts controller
-  - use of strong parameters via `micropost_params` allows only content to be edited through the web
-  - create micropost instance var by calling build on user association
-  - attempt to save and check result
-  - if success
-    - flash success
-    - redirect to root
-  - else if failure
-    - render 'static_pages/home'
-- update static_pages/home view
-  - add check for signed in
-    - if signed in render user into and form
-    - if not, render original homepage
-  - add shared partials
-    - user info should have gravatar, link to user and number of posts
-    - micropost form should have error messages, text area for content and submit button "Post"
-  - update how `error_messages.html.erb` is rendered
-    - originally written to anticipate user instance var
-    - now needed to be called on user and microposts object
-    - the form var `f` can access the object via `f.object` (either `@user` or `@micrpost`)
-    - pass `f.object` in as a hash with key *object*
-    - update partial to use `object` instead of `@user`
-    - update references to rendering this partial, passing in `object: f.object`
-      - `users/new`
-      - `users/edit`
-- update StaticPagesController
-  - view expects micropost instance var
-  - if user is signed in
-    - build one by calling build on `current_user` association
-- all specs passing, but not complete
-
-### 10.3.3 | A proto-feed
-- will start with basic feed of signed in user's posts on homepage
-- ch 11 will introduce a feed of other users posts
-- add `feed` method to User model
-- add tests for `feed` method
-  - verify that user's posts are present
-  - verify that other users' posts are not present
-  - use `include?` method to check if post is in feed array
-- `feed` method implementation
-  - instance method
-  - get all Micropost where the user_id matches the current users id
-  - could use `microposts` associated for same functionality
-    - this could resist refactoring when we update the feed
-  - `.where(user_id = ?)` the question mark ensures the param passed in is escaped
-    - good practice
-    - avoid SQL injection
-- update static pages test
-  - create some microposts
-  - for signed in user, make sure that the page has an li + post id on page
-- update `home` action in StaticPagesController to add @feed_items
-- create partials
-  - partial for feed itself
-    - seperate partial for feed items
-    - will use `collection:` param to pass colleciton of feed items
-    - this will call partial on each item in the collection
-  - partial for feed item
-- update home parital to render feed
-- ISSUE: if creating a new micropost fails
-  - never redirects to root, does not hit static pages controller
-  - partial expects feed instance var
-  - init feed instance var to empty array in failing branch of `create` action in mircoposts controller
-
-### 10.3.4 | Destorying microposts
-- will add ability to delete a micropost
-- add delete links to posts
-- delete links will only work for mircoposts created by current user
-- update partials
-  - check if current user is the same user on the micropost
-  - add link with delete method if so
-  - update feed item partial and micropost partial
-- write tests
-  - check that clicking delete link changes the count by 1
-- update microposts controller
-  - add correct user method to verify that current user is micropost author
-  - add before filter to destory action with correct user method
-  - can use `find_by` and check for nil or use `find` and catch exception
-
-
-## 10.4 Conclusion
-- done with micropost resource
-- need to add social layer in next section
-- commit to master
-- push to heroku
-
-
-## 10.5 Exercises
-1.
-2.
-3. (done)
-4. 
-5. (done)
-6.
-7. 
 
 
 
@@ -2349,11 +2020,340 @@ DELETE w/o js : http://railscasts.com/episodes/77-destroy-without-javascript
 
 
 
-# Chapter 11 | title #############################################################################
+# Chapter 10 | User Microposts #############################################################################
 
-#### Topics:
+# Topics:
+- micropost model
+- showing microposts
+- manipulating microposts
 
-#### References:
+# References:
+
+
+
+#Notes
+
+- ch9 completed REST actions for users
+- this chapter will add the user microposts resource
+- associate user and microposts data models using `has_many` and `belongs_to`
+- create new branch 'ch10-user-microposts'
+
+## 10.1 |  A Micropost model
+- microposts data model will include validations and associations with the user data model
+- unlike user model:
+  - fully tested
+  - default ordering
+  - automatic destruction if parent user is destroyed
+
+### 10.1.1 | The basic model
+- model only needs two attributes:
+  - content
+  - user id (to associate user/owner with post)
+- generate model: `rails g model Micropost content:string user_id:integer`
+- remove generatd factory (will do by hand): `rm -f spec/factories/microposts.rb`
+  - mine did not
+- goal: get all posts for user in reverse chrono order
+  - add index for microposts on user id and created at
+  - add to migration: `add_index :microposts, [:user_id, :created_at]`
+  - creates *mulitple key index*
+  - Active Records uses both keys simultaneously
+  - `t.timestamps` creates updated_at and created_at columns
+- basic tests for model
+  - verify responds to `content` and `user_id` attrs
+- to get tests to pass, migrate and prepare db
+  - `bundle exec rake db:migrate`
+  - `bundle exec rake test:prepare`
+- tests should pass, althought not written in "rails way"
+
+### 10.1.2 | The first validation
+- need to validate Micropost model
+  - user id to indicate which user wrote the post
+  - correct way is to use Active Record *associations*
+  - for now we will write the test, get it to pass and refactor in the next section
+- testing
+  - set user id to nil
+  - make sure it should be invalid
+  - existing case add condition that it should be valid
+- tests will be red
+  - add validation via *validates* for the presence for user_id in the Micropost model
+
+### 10.1.3 | User/Micropost associations
+- each micropost belongs to one user
+- each user can have many microposts
+- will use *belongs_to* and *has_many* **associations** respectively
+- Rails generates the following methods for these assciations
+
+| Method                       | Purpose |
+------------------------------------------
+|`micropost.user`              | Return the User obj associated with post. |
+|`user.microsposts`            | Return an array of Microposts of user's microposts (returns empty array) (returns ActiveRecrod::Asscociations::CollectionProxy) |
+|`user.microposts.create(arg)` | Create a microposts and set user_id field to user.id |
+|`user.microposts.create!(arg)`| Create a micropost and save to db (?)(exception on failure) |
+|`user.microposts.build(arg)`  | Return a new Micropost obj (user_id = user.id) |
+
+- the conanical way to build a micropost is through the user
+  - instead of >> use this:
+    - Micropost.create  >> user.microposts.create
+    - Micropost.create! >> user.microposts.create!
+    - Micropost.new     >> user.microposts.build
+  - user id is automatically assigned
+- update Micropost model spec
+  - use build()
+  - check that it responds to :user
+  - check that user is the equal to the user we created it with
+- update user model spec (more to come in next section)
+  - check that it responds to :microposts
+- update Microposts model
+  - `belongs_to :user`
+- update User model
+  - `has_many :microposts`
+- all specs should be green
+
+
+### 10.1.4 | Micropost refinements
+- previously tested just existence of microposts attr on user
+- add *ordering* and *dependency*
+- verify that `user.microposts` returns an array
+- create a micropost factory to *factories.rb* via FactoryGirl
+
+#### default scope
+- by default, no guarantees about ordering of `user.microposts`
+- testing
+  - create two posts
+    - one a day ago another an hour ago
+    - Factory Girl allows us to set *created_at* attr, which is automatic from Active Record
+    - most dbs order by id, so these would be returned in wrong order
+    - use `let!` to create variables immediately and set ids
+      - `let` variables are lazy, not created until used
+  - use `to_a` to convert Active Record *collection proxy* returned by `user.microposts`
+- update User model
+  - add `default_scope`
+  - pass `order` argument with sql syntax order condition
+    - `default_scope -> { order('created_at DESC') }`
+  - *DESC* or descending order will return posts in reverse chronological order
+- in Rails 4, all scopes take anonymous function which return criteria for scope
+  - *lazy evaluation*, scope is evaluated as needed
+  - *Proc* (procedure) or *lambda* function
+    - takes a block
+    - evaluates with the `call` method
+
+#### dependent destory
+- currently have the ability to destroy users
+- want to destroy posts created by users when destroyed
+- to test, we will destory the user and verify the associated posts are no longer in the db
+- steps to tests
+  - save a local copy of users microposts via `to_a`
+  - destroy user
+  - make sure local copy is not empty (safety check)
+  - iterate over each micropost
+    - user `where` to verify they are no in the db and empty obj is returned
+    - can also use `find` but we need to check for an *ActiveRecord::RecordNotFound* exception is raised
+- updating user model
+  - add option to `has_many` associated method
+    - `has_many :mircoposts, dependent: :destory`
+  - this options specificies that each micro post associated with user should be destroyed with user
+- all tests should be green
+
+### 10.1.5 | Content validations
+- add validations for tentent
+  - must be present
+  - can be no longer than 140 char (it's micro afer all)
+- update Micropost model spec
+  - test for content blank
+  - test for content which is too long
+    - use string multiplication
+- update Micropost model
+  - add `validates` for content
+    - `validates :content, presence: true, length: { maximum: 140 }`
+- all tests passing
+
+## 10.2 | Showing microposts
+- no way to create posts through web
+- will test display of posts
+- ala Twitter, will show posts on user `show` page, not some index page
+- will add sample data for now to display
+
+### 10.2.1 | Augmenting the user show page
+- use factory to create posts for user, verify contents of user profile page reflect post
+- user `let!` to create posts immediately
+- test user profile page, in microposts block
+  - check for content of both posts
+  - check that the count is on the page
+- calling count through association
+  - does not pull all microposts from db
+  - calls count directly on db
+  - if cound is still a bottleneck, can use [counter cache](http://railscasts.com/episodes/23-counter-cache-column)
+- update the show view
+  - user `any?` to check for microposts before rendering dom
+  - use microposts count to header of section
+  - add ordered list
+  - render `@microposts` instance var
+    - render each micropost in `@microposts` and use partial
+    - looks for a partial, `microposts/_micropost.html.erb`
+    - did this for user as well
+  - call `will_paginate` on `@microposts` instance var
+    - before did not need instance var
+    - assumes there is an instance var named after current controlle (`@users`)
+    - instance var should be of type ActiveRecord::Relation (sec 9.3.3)
+- add a mircoposts partial
+  - `app/views/microposts/_micropost.html.erb`
+  - render content
+  - uses `time_ago_in_words` helper to render human readable created_at
+- update the Users controller, show action
+  - create a microposts instance var
+  - use `paginate` through the `@user` association
+
+### 10.2.2 | Sample microposts
+- update `db:populate` rake task to include some microposts
+  - update the `lib/tasks/sample_data.rake`
+  - for first 6 users (`User.all(limit: 6)`)
+    - add 50 microposts
+    - use `Faker::Lorem.sentence(5)` to generate content
+- update the data base
+  - reset database: `bundle exec rake db:reset`
+  - populate database: `bundle exec rake db:populate`
+  - prepare test db: `bundle exec test:prepare`
+- add css to `custom.css.scss` for micropost styling
+
+## 10.3 | Manipulating microposts
+- interface for creating/destorying microposts through the web
+- will use form to create micropost resource
+- first hint of *status feed*
+- most Micropost manipulation through Users and StaticPages controllers
+  - only need create and destory actions
+
+- microcontroller routes
+| HTTP request | URL | Action | Purpose |
+-----------------------------------------
+| `POST`| /microposts | `create` | create a new micropost |
+| `DELETE`| /microposts/1 | `destroy` | destory micropost with id 1 |
+
+### 10.3.1 | Access control
+- both `create` and `destory` actions should require user to be signed in
+- will add test later to ensure that user only delets their own
+- add rspec tests
+  - post to "microposts_path" to hit `create`
+  - delete to "micropost_path", passing in a micropost Factory Girl to hit `delete`
+  - ensure that the response is redirected to sign in page (both cases)
+- refactor `signed_in_user` out of the Users controller into the Sessions helper
+  - gives access to Users and Microposts controllers
+- user a before filter and check for signed in user (`before_action :signed_in_user`)
+  - note that if additional actions were added, may have to specify which actions filter applies to
+- all tests should pass
+
+### 10.3.2 | Creating Microposts
+- following Twitter convention, creating a new post will be on homepage
+  - only for signed in user
+  - not at seperate path (microposts/new) like user
+- serve different homepage based on user sign in status
+- generate integration test: `rails generate integration_test micropst_pages`
+  - test similar to user page tests
+  - subject = page
+  - create user with factor girl
+  - sign in user before each test
+  - describe micropost creation
+    - visit root for each test
+    - test for invalid info
+      - no info
+      - check that after click micropost count does not change
+      - make sure error messages display
+    - test for valid info
+      - fill in content field with text
+      - check that after click micropost count changes by 1
+- update the `create` action for the Mircoposts controller
+  - use of strong parameters via `micropost_params` allows only content to be edited through the web
+  - create micropost instance var by calling build on user association
+  - attempt to save and check result
+  - if success
+    - flash success
+    - redirect to root
+  - else if failure
+    - render 'static_pages/home'
+- update static_pages/home view
+  - add check for signed in
+    - if signed in render user into and form
+    - if not, render original homepage
+  - add shared partials
+    - user info should have gravatar, link to user and number of posts
+    - micropost form should have error messages, text area for content and submit button "Post"
+  - update how `error_messages.html.erb` is rendered
+    - originally written to anticipate user instance var
+    - now needed to be called on user and microposts object
+    - the form var `f` can access the object via `f.object` (either `@user` or `@micrpost`)
+    - pass `f.object` in as a hash with key *object*
+    - update partial to use `object` instead of `@user`
+    - update references to rendering this partial, passing in `object: f.object`
+      - `users/new`
+      - `users/edit`
+- update StaticPagesController
+  - view expects micropost instance var
+  - if user is signed in
+    - build one by calling build on `current_user` association
+- all specs passing, but not complete
+
+### 10.3.3 | A proto-feed
+- will start with basic feed of signed in user's posts on homepage
+- ch 11 will introduce a feed of other users posts
+- add `feed` method to User model
+- add tests for `feed` method
+  - verify that user's posts are present
+  - verify that other users' posts are not present
+  - use `include?` method to check if post is in feed array
+- `feed` method implementation
+  - instance method
+  - get all Micropost where the user_id matches the current users id
+  - could use `microposts` associated for same functionality
+    - this could resist refactoring when we update the feed
+  - `.where(user_id = ?)` the question mark ensures the param passed in is escaped
+    - good practice
+    - avoid SQL injection
+- update static pages test
+  - create some microposts
+  - for signed in user, make sure that the page has an li + post id on page
+- update `home` action in StaticPagesController to add @feed_items
+- create partials
+  - partial for feed itself
+    - seperate partial for feed items
+    - will use `collection:` param to pass colleciton of feed items
+    - this will call partial on each item in the collection
+  - partial for feed item
+- update home parital to render feed
+- ISSUE: if creating a new micropost fails
+  - never redirects to root, does not hit static pages controller
+  - partial expects feed instance var
+  - init feed instance var to empty array in failing branch of `create` action in mircoposts controller
+
+### 10.3.4 | Destorying microposts
+- will add ability to delete a micropost
+- add delete links to posts
+- delete links will only work for mircoposts created by current user
+- update partials
+  - check if current user is the same user on the micropost
+  - add link with delete method if so
+  - update feed item partial and micropost partial
+- write tests
+  - check that clicking delete link changes the count by 1
+- update microposts controller
+  - add correct user method to verify that current user is micropost author
+  - add before filter to destory action with correct user method
+  - can use `find_by` and check for nil or use `find` and catch exception
+
+
+## 10.4 Conclusion
+- done with micropost resource
+- need to add social layer in next section
+- commit to master
+- push to heroku
+
+
+## 10.5 Exercises
+1. added test to static page test and checked result of pluralize
+2. create 40 add'l microposts and add check that number of posts (li within container) is equal to pagination default==30
+3. (done)
+4. on user page spec, check for no delete link when not signed in, link when signed in on own page, and no link on another page when signed in
+5. (done)
+6. add helper method to micrposts helper and call on content
+7. add jquery handler to watch keyup from element, add element to track feedback
 
 
 
