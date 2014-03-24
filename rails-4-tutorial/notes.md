@@ -201,6 +201,34 @@
   - will implement ajax method
 
 ### 11.2.3 | Following and followers pages
+- wil create pages for displaying followers and users followed
+- hybrid of user index page and user profile page
+  - include user info in sidebar
+  - include list of users (paginated)
+- both follower and following pages require signin
+  - update auth pages spec
+- update user pages spec
+  - make sure that for signed in user
+    - title is correct
+    - heading is correct
+    - link is present
+- two new actions in Users controller: `following` and `followers`
+  - will render same partial (explictly call render)
+  - sets title
+  - finds user
+  - finds either `@user.follow_users` or `@user.followers`
+- create `show_users` partial
+  - add title
+  - display user info
+  - if followers/following
+    - add list of users and gravatar in grid
+    - render list of users by calling `render @users`
+- less specs fail but still 3 failures
+
+### 11.2.4 | A working follow button the standard way
+
+
+
 
 #############################################################################
 
