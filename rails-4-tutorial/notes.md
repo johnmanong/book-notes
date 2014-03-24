@@ -153,10 +153,54 @@
   - get users 4 - 41 to follow user
 
 ### 11.2.2 | Stats and a follow form
+- update profile and homepages to reflect followers and folled users
+  - homepage and profile pages gets stats
+  - profile pages get follow/unfollow buttons
+- will use 'following' (same as twitter) although it can be ambiguous on its own
+- update route file for `resources :users`
+  - for each member (i.e. user), get following and followers
+  - member means it responds to routes with user id in them
+  - results in routes 'users/1/following' and 'users/1/followers
+- another possibility, `collection`, does not require an id and acts on all users
+  - e.g. `get :tigers` woudl respond to `users/tigers` and display all tigers in app
+- note that this results in the use of 'following' and 'followed users' to identify the same group of users
+  - this is less awkward from a routing, ui and resulting path var
 
+| HTTP request | URL | Action | Named Route |
+---------------------------------------------
+| `GET` | /users/1/following | following | following_user_path(1) |
+| `GET` | /users/1/followers | followers | followers_user_path(1) |
 
+- add tests for stats partial
+  - create another user
+  - have that user follow first user
+  - visit root
+  - make sure that there are links with:
+    - "0 following" and href: `following_users_path(user)`
+    - "1 followers" and href: `followers_users_path(user)`
+- create stats partial
+  - if user instance var is nil, assign to current users (home and profile pages)
+  - add followers and following count and labels
+  - use association to get count
+  - will have ajax implementation later
+- update home view to render stats
+- update custom.css.scss for stats styling
+- create partial for follow/unfollow button
+  - do not display if user is current users
+  - if following, render unfollow
+  - if not following, render follow
+- update routes file for relationship routes
+  - only `:create` and `:destory`
+- create follow and unfollow partials
+  - simple form to create/destory relationships, respectively
+  - POST (create action) and DELETE (destory action)
+  - follow form has hidden field to pass user id to create action
+- update users/show view to include stats and follow form
+- note, these do not work and tests to do pass
+  - will implement standard method
+  - will implement ajax method
 
-
+### 11.2.3 | Following and followers pages
 
 #############################################################################
 
