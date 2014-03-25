@@ -20,6 +20,8 @@
 #### References:
 - [when to use rspec let](http://stackoverflow.com/questions/5359558/when-to-use-rspec-let)
 - [Rails routing](http://guides.rubyonrails.org/routing.html)
+- [Selenium](http://docs.seleniumhq.org/)
+- [Watir](http://watir.com/)
 
 - this chapter will add social layer to app
 - users can follow and unfollow other users
@@ -226,8 +228,71 @@
 - less specs fail but still 3 failures
 
 ### 11.2.4 | A working follow button the standard way
+- update profile page section of user pages spec
+  - create another user
+  - sign in
+  - go to other uses page
+  - click 'Follow'
+    - confirm that users followed_users count goes up by 1
+    - confirm that other users followers count goes up by 1
+    - confirm that button input value toggles via `have_xpath`
+  - do the same for 'Unfollow'
+  - security hole: creating and destroying relationships should only be available to signed in users
+    - use before filter
+    - update auth spec
+      - submit `post relationships_path` to hit create action directly
+      - submit `delete relationship_path(1)` to hit destroy directly
+      - make sure request redirects to signin_path
+      - can pass hardcoded id, b/c active record should not be hit before redirect
+  - create Relationships Controller
+    - populate `create`
+      - find user by `:followed_id` in `:relationship` block (form_for)
+      - call follow! on current user, passing in found user
+      - redirect to user page
+    - populate `destroy`
+      - find user via Relationship object (find bu `:id` and call `followed` accessor)
+      - call unfollow on current user, passing in user
+      - redirect to user page
+    - use before filter, `before_action :signed_in_user` on all actions within Relationships controller
+  - even though this isn't completely required (current_user is nil if not signed in), better to be explicit
+  - all specs should be green
+
+### 11.2.5 | A working follow button with Ajax
+- create and destroy simply redirect back to same page
+- using ajax, we can update page without leaving the page
+  - add `remote: true` to form_for arguments list
+  - Rails automagically uses ajax
+  - gracefully degrades if js is not available
+    - unobtrusive javascript (Rails 3+) [link](http://railscasts.com/episodes/205-unobtrusive-javascript)
+  - update the follow and unfollow views
+  - in generated dom, ads `data-remote="true` to form element
+- setup tests for ajax
+  - relationship controller spec
+  - will make use of `xhr` method (not available in integration tests)
+    - takes http method as a symbol, action name as a symbol, and params as a hash
+  - test creating relationship (post to create action)
+    - expect Relationship count to increase by 1
+    - expect response to be success
+  - test destorying relationship (delete to destroy action)
+    - expect Relationship count to decrease by 1
+    - epxect response to be success
+- setup controller to respond to `xhr` requests
+  - add `respond_to` block
+    - only 1 line called
+    - `format.html` will respond to standard html request and specify action
+      - `format.html { redirect_to @user }`
+    - `format.js` will respond to ajax request
+      - Rails automatically calls *Javascript Embedded Ruby* (`.js.erb`) file with action name
+        - i.e. `views/relationships/create.js.erb`
+        - allows us to mix ruby and javascript
+- JS-ERb files
+  - Rails automatically provides jQuery helpers for dom manipulation
+  - jQuery to select form and followers count
+  - `.html()` to replace the html in those elements
+  - `escape_javascript` to escape result of rendering partial (ruby) into js file
 
 
+## 11.3 | The status feed
 
 
 #############################################################################
