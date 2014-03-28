@@ -293,6 +293,73 @@
 
 
 ## 11.3 | The status feed
+- will update feed such that posts come from user and users being followed
+- heavy lifting in Rails, Ruby and SQL
+
+### 11.3.1 | Motivation and strategy
+- list of posts should contain both user's posts and posts from followed users
+- will implement `Micropost.from_users_followed_by(user)`
+- high level approach: get all Microposts if the user id matches current user or followed user
+- update user spec tests
+  - already have test for user's post present
+  - already have test for unfollowed users post not being present
+  - create a followed user and posts
+  - make sure followed user's posts are present
+- update user model
+  - update feed method to use `from_users_followed_by`
+
+### 11.3.2 | A first feed implementation
+- the sql query will look for and user_id in a list of followed users or current user id
+- ActiveRecord uses "where" method to select from db
+  - in secion 10.3.3 we havd simple: `Micropost.where("user_id = ?", id)`
+  - will change this to include followed users: `where("user_id in (?) or user_id = ?", followed_ids, user)`
+  - not we are using `user` instead of `user.id`, per Rails convention, Rails automatically looks for id
+- Ruby's `map` function
+  - available on any "enumerable" (implements `each`) object
+  - can be used to map each value from one to another
+  - offers shorthand
+    - `[1,2,3].map { |i| i.to_s }` == `[1,2,3].map(&:to_s)`
+    - method pass in as symbol
+    - method called on each elemebt
+- can use `join` method to convert array to string
+  - `[1,2,3].map(&:to_s).join(', ')` == '1, 2, 3'
+- use this to get list of followed user ids
+  - `User.first.followed_users.map(&:id)` == [4,5, ...]
+  - there is even a shorthand for the shorthand!
+  - `User.find.followed_user_ids`
+  - this is synthesized by Acive Record based on `has_many :followed_users`
+  - could use `join` to get a string from this
+- do not need to create full string, `?` takes care of it for us
+  - also some database depended incompatabilities
+  - will only need `user.followed_user_ids`
+- final class method is two lines and very similar to proposed
+- all tests green
+
+### 11.3.3 | Subselects
+- current implementation doesnt scale well
+  - problem is with: `user.followed_user_ids`
+  - loads entire array into memory which isn't efficient
+  - want to push this into the SQL layer, since it's only used there
+  - will use a subselect instead
+- first we can refactor the `?` to use symbols and hash insted
+  - e.g. `where(user_id = ?)` -> `where(user_id = :user_id, user_id: id)`
+  - this syntax used when variable is to be used more than once in SQL statement
+- replace Ruby code to get followed user ids with equivalent SQL statment
+  - `user.followed_user_ids` == `SELECT followed_id FROM relationships WHERE follower_id = :user_id`
+- can use string *interpolation* or symbol/hash syntax for this (former makes more sense)
+- will not scale indefinitely
+  - for larger scale, maybe async background job?
+
+### 11.3.4 | The new status feed
+- feed is complete
+- `paginate` reaches into Micropost model and limits SQL query to 30 results
+
+
+## 11.4 | Conclusion
+- this concludes core functionality
+  - models, views, controllers, templates, partials, filters, validations, callbacks,`has_many`/`belongs_to`, `has_many through`, security, testing and deployment
+- extensions suggested in next section
+- merge with master and deploy!
 
 
 #############################################################################
