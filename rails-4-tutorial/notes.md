@@ -22,6 +22,12 @@
 - [Rails routing](http://guides.rubyonrails.org/routing.html)
 - [Selenium](http://docs.seleniumhq.org/)
 - [Watir](http://watir.com/)
+- [Action Mailer](http://railscasts.com/episodes/206-action-mailer-in-rails-3)
+- [Remember me & Reset Password](http://railscasts.com/episodes/274-remember-me-reset-password)
+- [Generating RSS feeds](http://railscasts.com/episodes/87-generating-rss-feeds)
+- [Simple Search form](http://railscasts.com/episodes/37-simple-search-form)
+- [Thinking Sphinx](http://railscasts.com/episodes/120-thinking-sphinx)
+- [Heroku full text](https://devcenter.heroku.com/articles/full-text-search)
 
 - this chapter will add social layer to app
 - users can follow and unfollow other users
@@ -361,6 +367,76 @@
 - extensions suggested in next section
 - merge with master and deploy!
 
+### 11.4.1 | Extensions to the sample application
+#### Replies
+- user @ sign to reply to user
+- add `in_reply_to` column to microposts table
+- add `including_replies` scope to micropost Model
+- need unique identifier for each user
+  - add unique user name
+  - concate name and id
+
+#### Messaging
+- direct/private messaging
+- microposts prefixed with "d"
+- probably involve message model and regex max on new microposts
+
+#### Follower notifcations
+- send an email when new follower
+- can opt in/out
+- [Railscast on mailing in Rails] (http://railscasts.com/episodes/206-action-mailer-in-rails-3)
+
+### Password reminders
+- one way encryption, cannot email pw
+- email link to reset
+- see this [Railscast](http://railscasts.com/episodes/274-remember-me-reset-password)
+
+### Sign up confirmation
+- only regex to verify valid email
+- feature creates user in inactive state and require activation through email
+  - send activation url
+  - activate user when url hit
+- Ref: <google> state machines in rails
+
+#### RSS feed
+- provide rss feed of posts
+- possible require authentication scheme
+- see [Railscast](http://railscasts.com/episodes/87-generating-rss-feeds)
+
+#### REST Api
+- implement `respond_to` blocks for controller actions which respond to XML
+- only available to authorized users
+
+#### Search
+- no way to find users
+- implement a search functionality
+- Refs:
+  - [Simple Search form](http://railscasts.com/episodes/37-simple-search-form)
+  - [Thinking Sphinx](http://railscasts.com/episodes/120-thinking-sphinx)
+  - [Heroku full text](https://devcenter.heroku.com/articles/full-text-search)
+
+### 11.4.2 | Guide to further resources
+- screencasts"
+  - [The Ruby on Rails Tutorial Screencasts](http://ruby.railstutorial.org/#buy)
+  - [Railscasts](http://railscasts.com/)
+  - [Peepcode](http://peepcode.com/)
+- books
+  - [Beginning Ruby *by Peter Cooper*](http://www.amazon.com/gp/product/1430223634)
+  - [The Well-Grounded Rubyist *by David A Black*](http://www.amazon.com/gp/product/1933988657)
+  - [Eloquent Ruby *by Russ Olsen*](http://www.amazon.com/Eloquent-Ruby-Addison-Wesley-Professional-Series/dp/0321584104/)
+  - [The Ruby Way *by Hal Fulton*](http://www.amazon.com/gp/product/0672328844)
+  - [The Rails 3 Way (2nd ed) *by Ryan Bigg and Yehuda Katz*](http://www.amazon.com/gp/product/0321601661)
+- online classes
+  - [CodeScool](https://www.codeschool.com/)
+
+
+## 11.5 | Exercises
+1. write tests for dependent destroy: check relationships when destorying user, and reverse relationships when destorying other user
+2. it works! (Google: "rails respond_with")
+3. TODO refactor gravatar and name, microposts/followers list
+4. TODO write tests for user stats
+
+
 
 #############################################################################
 
@@ -374,6 +450,7 @@
     $ git push heroku master         // push to heroku
     $ heroku rename railstutorial    // rename repo on heroku (optional, must be unique)
     $ heroku logs                    // view logs
+    $ heroku keys:add ~/.ssh/id_rsa.pub // add heroku key
 
 ## Postgres ###################################################################################
 
