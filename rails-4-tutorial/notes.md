@@ -433,8 +433,8 @@
 ## 11.5 | Exercises
 1. write tests for dependent destroy: check relationships when destorying user, and reverse relationships when destorying other user
 2. it works! (Google: "rails respond_with")
-3. TODO refactor gravatar and name, microposts/followers list
-4. TODO write tests for user stats
+3. refactor gravatar and name
+4. write tests for user stats on user profile page, follow pattern in static pages spec
 
 
 
